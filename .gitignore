@@ -1,0 +1,19 @@
+# Build and test output
+/bin/
+/dist/
+/mac-cleanup-studio
+*.test
+*.out
+coverage.*
+*.prof
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*~

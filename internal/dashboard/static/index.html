@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0a0c10">
+  <meta name="description" content="A private, local dashboard for reviewing and cleaning reclaimable Mac storage.">
+  <title>Mac Cleanup Studio</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Application navigation">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </span>
+        <span>
+          <strong>Cleanup</strong>
+          <small>STUDIO</small>
+        </span>
+      </div>
+
+      <nav aria-label="Workspace">
+        <a class="nav-item is-active" href="#overview" aria-current="page">
+          <span class="nav-icon nav-icon-overview" aria-hidden="true"></span>
+          Overview
+        </a>
+        <a class="nav-item" href="#categories">
+          <span class="nav-icon nav-icon-rules" aria-hidden="true"></span>
+          Cleanup plan
+          <span class="nav-count" id="nav-rule-count">0</span>
+        </a>
+        <a class="nav-item" href="#activity">
+          <span class="nav-icon nav-icon-activity" aria-hidden="true"></span>
+          Activity
+        </a>
+      </nav>
+
+      <div class="privacy-note">
+        <span class="privacy-icon" aria-hidden="true"></span>
+        <div>
+          <strong>Private by design</strong>
+          <span>Runs only on this Mac. No analytics, uploads, or cloud calls.</span>
+        </div>
+      </div>
+      <div class="local-pill"><span></span> Local session</div>
+    </aside>
+
+    <main id="main-content" tabindex="-1">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">STORAGE WORKSPACE</p>
+          <h1>Good <span id="day-period">day</span>. Let’s make some room.</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="connection-state" id="connection-state" role="status">
+            <span class="state-dot"></span>
+            <span>Connecting</span>
+          </div>
+          <button class="icon-button" id="refresh-disk" type="button" aria-label="Refresh disk usage" title="Refresh disk usage">
+            <span class="refresh-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+      </header>
+
+      <noscript>
+        <div class="notice notice-error">JavaScript is required for live scan and cleanup progress.</div>
+      </noscript>
+      <div class="notice notice-error" id="auth-notice" hidden>
+        <div>
+          <strong>This local session is locked.</strong>
+          <span>Launch the dashboard from the CLI again so it can provide a fresh local session token.</span>
+        </div>
+      </div>
+
+      <section class="overview-grid" id="overview" aria-labelledby="storage-title">
+        <article class="panel storage-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">MACINTOSH STORAGE</p>
+              <h2 id="storage-title">Disk health</h2>
+            </div>
+            <span class="volume-label" id="volume-label">Loading volume…</span>
+          </div>
+
+          <div class="disk-layout">
+            <div class="disk-ring" id="disk-ring" role="img" aria-label="Disk usage loading">
+              <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+                <circle class="ring-track" cx="50" cy="50" r="43" pathLength="100"></circle>
+                <circle class="ring-usage" id="disk-ring-usage" cx="50" cy="50" r="43" pathLength="100" stroke-dasharray="0 100"></circle>
+              </svg>
+              <div class="ring-center">
+                <strong id="ring-free">—</strong>
+                <span>available</span>
+              </div>
+            </div>
+            <div class="disk-summary">
+              <div class="stat-row">
+                <span><i class="legend-dot used"></i>Used</span>
+                <strong id="disk-used">—</strong>
+              </div>
+              <div class="stat-row">
+                <span><i class="legend-dot free"></i>Available</span>
+                <strong id="disk-free">—</strong>
+              </div>
+              <progress class="capacity-track" id="capacity-fill" max="100" value="0" aria-hidden="true">0%</progress>
+              <p class="capacity-caption"><span id="used-percent">—</span> of <span id="disk-total">—</span> used</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel opportunity-panel">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">CLEANUP OPPORTUNITY</p>
+              <h2>Ready to reclaim</h2>
+            </div>
+            <span class="spark" aria-hidden="true">✦</span>
+          </div>
+          <div class="opportunity-number">
+            <strong id="reclaimable-total">—</strong>
+            <span id="reclaimable-caption">Run a scan to calculate</span>
+          </div>
+          <div class="metric-pair">
+            <div><span>Selected now</span><strong id="selected-total">0 B</strong></div>
+            <div><span>Rules selected</span><strong id="selected-count">0</strong></div>
+          </div>
+          <p class="opportunity-note" id="opportunity-note">Nothing is removed until you review the plan and type DELETE.</p>
+        </article>
+      </section>
+
+      <section class="scan-section" aria-labelledby="scan-title">
+        <div class="section-heading wide">
+          <div>
+            <p class="eyebrow">SCAN PROFILE</p>
+            <h2 id="scan-title">Choose how deeply to look</h2>
+          </div>
+          <button class="primary-button" id="scan-button" type="button">
+            <span class="scan-icon" aria-hidden="true"></span>
+            <span>Scan this Mac</span>
+          </button>
+        </div>
+
+        <fieldset class="profile-grid" id="profile-options">
+          <legend class="sr-only">Scan profile</legend>
+          <label class="profile-card is-selected">
+            <input type="radio" name="profile" value="safe" checked>
+            <span class="profile-top"><strong>Safe cleanup</strong><b>RECOMMENDED</b></span>
+            <span>Old user caches, logs, and Xcode rebuild data with conservative age limits.</span>
+            <small><i class="risk-dot low"></i> Low-risk rules selected</small>
+          </label>
+          <label class="profile-card">
+            <input type="radio" name="profile" value="balanced">
+            <span class="profile-top"><strong>Balanced review</strong><b>MORE SPACE</b></span>
+            <span>Adds developer caches and Trash as explicit review choices.</span>
+            <small><i class="risk-dot medium"></i> Review before cleanup</small>
+          </label>
+          <label class="profile-card">
+            <input type="radio" name="profile" value="review">
+            <span class="profile-top"><strong>Full review</strong><b>DISCOVERY</b></span>
+            <span>Surfaces every supported category. Higher-risk rules remain unselected.</span>
+            <small><i class="risk-dot high"></i> Nothing risky auto-selected</small>
+          </label>
+        </fieldset>
+
+        <div class="progress-panel" id="scan-progress-panel" hidden>
+          <div class="progress-copy">
+            <span class="pulse-mark" aria-hidden="true"></span>
+            <div><strong id="scan-progress-title">Scanning safely…</strong><span id="scan-progress-detail">Preparing rules</span></div>
+            <b id="scan-progress-percent">0%</b>
+          </div>
+          <progress id="scan-progress" max="100" value="0">0%</progress>
+        </div>
+      </section>
+
+      <section class="results-section" id="categories" aria-labelledby="results-title">
+        <div class="section-heading wide">
+          <div>
+            <p class="eyebrow">REVIEW BEFORE CLEANING</p>
+            <h2 id="results-title">Cleanup plan</h2>
+          </div>
+          <div class="result-tools">
+            <span id="result-summary">No scan results yet</span>
+            <button class="text-button" id="select-safe" type="button" disabled>Select low risk</button>
+            <button class="text-button" id="select-none" type="button" disabled>Clear selection</button>
+          </div>
+        </div>
+
+        <div class="empty-state" id="empty-state">
+          <span class="empty-visual" aria-hidden="true"><i></i><i></i><i></i></span>
+          <h3>Your cleanup plan will appear here</h3>
+          <p>Scan first. You’ll see categories, estimated sizes, safety levels, age rules, and every plan candidate—largest first—before making a decision.</p>
+        </div>
+
+        <div class="issue-list" id="scan-issues" aria-live="polite"></div>
+        <div class="category-grid" id="category-grid"></div>
+      </section>
+
+      <section class="activity-section" id="activity" aria-labelledby="activity-title" hidden>
+        <div class="section-heading wide">
+          <div>
+            <p class="eyebrow">LIVE ACTIVITY</p>
+            <h2 id="activity-title">Cleanup progress</h2>
+          </div>
+          <span class="activity-total" id="activity-total">0 B removed</span>
+        </div>
+        <div class="activity-card">
+          <div class="progress-copy">
+            <span class="pulse-mark clean" aria-hidden="true"></span>
+            <div><strong id="clean-progress-title">Preparing cleanup…</strong><span id="clean-progress-detail">Validating scan</span></div>
+            <b id="clean-progress-percent">0%</b>
+          </div>
+          <progress id="clean-progress" max="100" value="0">0%</progress>
+          <ol class="activity-log" id="activity-log" aria-live="polite"></ol>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <section class="cleanup-dock" id="cleanup-dock" aria-labelledby="dock-title" hidden>
+    <div class="dock-summary">
+      <span class="dock-icon" aria-hidden="true"></span>
+      <div><span id="dock-title">Selected cleanup</span><strong id="dock-total">0 B</strong></div>
+      <small id="dock-rules">0 rules</small>
+    </div>
+    <label class="confirmation-field">
+      <span>Type <strong>DELETE</strong> to confirm</span>
+      <input id="confirmation-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE" aria-describedby="confirmation-help">
+      <small id="confirmation-help">Only the selected rules from this scan will run.</small>
+    </label>
+    <button class="danger-button" id="clean-button" type="button" disabled>
+      <span class="trash-icon" aria-hidden="true"></span>
+      Clean selected
+    </button>
+  </section>
+
+  <dialog class="outcome-dialog" id="outcome-dialog" aria-labelledby="outcome-title">
+    <div class="outcome-mark" aria-hidden="true">✓</div>
+    <p class="eyebrow">CLEANUP COMPLETE</p>
+    <h2 id="outcome-title">Your Mac has more breathing room.</h2>
+    <div class="outcome-primary"><strong id="measured-total">0 B</strong><span>measured space reclaimed</span></div>
+    <div class="outcome-grid">
+      <div><span>Selected estimate</span><strong id="outcome-selected">0 B</strong></div>
+      <div><span>Candidates removed</span><strong id="outcome-items">0</strong></div>
+      <div><span>Cleanup duration</span><strong id="outcome-duration">0s</strong></div>
+    </div>
+    <p class="outcome-note" id="outcome-note"></p>
+    <form method="dialog"><button class="primary-button" type="submit">Done</button></form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <template id="category-template">
+    <article class="category-card">
+      <div class="category-select">
+        <label>
+          <input class="rule-checkbox" type="checkbox">
+          <span class="custom-check" aria-hidden="true"></span>
+          <span class="category-icon" aria-hidden="true"></span>
+          <span class="category-title"><strong></strong><small></small></span>
+        </label>
+        <span class="risk-badge"></span>
+      </div>
+      <p class="category-description"></p>
+      <dl class="rule-facts">
+        <div><dt>Age rule</dt><dd class="fact-age"></dd></div>
+        <div><dt>Action</dt><dd class="fact-action"></dd></div>
+        <div><dt>Plan items</dt><dd class="fact-items"></dd></div>
+      </dl>
+      <details class="largest-items">
+        <summary><span>Candidates in this plan</span><span class="chevron" aria-hidden="true"></span></summary>
+        <ul></ul>
+      </details>
+    </article>
+  </template>
+</body>
+</html>
