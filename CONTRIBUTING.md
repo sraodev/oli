@@ -57,6 +57,20 @@ In the description, include:
 - before/after screenshots for dashboard changes;
 - any change to the documented scan, review, or clean contract.
 
+Every PR must include a reviewer roadmap diagram: shipped behavior, the PR's
+delta, review order or dependencies, remaining work, and the hard safety
+boundary. Use verified issue/commit references and text status labels alongside
+colors. Keep small changes' diagrams small. Include an editable source and
+visually inspect the rendered result; see the
+[Storage Atlas example](docs/diagrams/pr-33-reviewer-roadmap.svg).
+
+Run relevant end-to-end flows for every implementation change using synthetic
+fixtures, never personal data for destructive testing. Cover the relevant CLI,
+API, and UI paths, including errors and cancellation. Record exact actions,
+environment, and results; distinguish manual smoke checks from automated E2E
+and unit/integration tests. If E2E is blocked, report the missing coverage and
+blocker explicitly rather than claiming completion.
+
 Documentation and tests should describe behavior, not an unimplemented future
 design. Avoid unrelated refactors in the same pull request.
 
