@@ -26,9 +26,8 @@ Mac Cleanup Studio keeps three boundaries visible:
    revalidated scan. The CLI requires both `--apply` and `--yes`; the dashboard
    requires typing `DELETE` for the completed scan.
 
-The project is inspired by the community interest around
-[`mac-cleanup-sh`](https://github.com/mac-cleanup/mac-cleanup-sh), but is an
-independent implementation with a deliberately narrower cleanup scope.
+The project is an independent implementation with a deliberately scoped
+cleanup policy.
 
 The local dashboard is intended to make those boundaries hard to miss. It
 shows disk usage, scanned/reclaimable/selected bytes, per-rule risk and age,
@@ -137,7 +136,7 @@ files that change during inspection and APFS features can affect estimates.
 are reported, and list results are bounded rather than exhaustive.
 
 See the [feature coverage and roadmap](docs/feature-parity.md) for what is
-implemented and what remains before broader Mac-maintenance feature parity.
+implemented and what remains on the Mac-maintenance roadmap.
 
 ## Release binaries
 

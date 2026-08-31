@@ -1,18 +1,14 @@
-# Feature parity roadmap
+# Feature roadmap
 
 Goal: an independently implemented, CLI-first Mac maintenance tool with an
-original interface. CleanMyMac is a feature reference, not the name, artwork,
-source code, or safety policy of this project. Full parity is **not implemented**.
+original interface, explicit safety boundaries, and explainable storage data.
+Planned capabilities are **not implemented** unless marked below.
 
-## Reference and current coverage
+## Current coverage
 
-This inventory was checked on August 30, 2026 against MacPaw's
-[tool catalogue](https://macpaw.com/support/cleanmymac/knowledgebase/my-tools),
-[Smart Care documentation](https://macpaw.com/support/cleanmymac/knowledgebase/smart-care),
-[Space Lens documentation](https://macpaw.com/support/cleanmymac/knowledgebase/space-lens-results),
-and [Cloud Cleanup documentation](https://macpaw.com/support/cleanmymac/knowledgebase/cloud-cleanup).
-Coverage varies by CleanMyMac edition; this is a functional roadmap, not a
-claim of equivalent protection or effectiveness.
+This inventory separates implemented functionality from planned work.
+Feature availability does not imply security protection or guaranteed
+cleanup effectiveness.
 
 | Feature family | Current implementation | Remaining work |
 | --- | --- | --- |
@@ -55,6 +51,6 @@ claim of equivalent protection or effectiveness.
 - “Old” is modification age, never a claim of last use or safe deletion.
 - No content reads, deletion plan, or cleanup action for personal files.
 
-The current milestone meets these criteria in local tests. It is not full
-CleanMyMac feature parity, an antivirus product, or a public release of this
-new functionality until separately published.
+The current milestone meets these criteria in local tests. It is not an
+antivirus product. Source publication and downloadable binary releases are
+separate delivery milestones.
