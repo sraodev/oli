@@ -4,6 +4,7 @@ package cleanup
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"syscall"
 )
@@ -30,9 +31,12 @@ func readDirNoFollow(path string, expected fingerprint) ([]os.DirEntry, error) {
 	if !expected.equal(actual) {
 		return nil, fmt.Errorf("directory changed before it was read")
 	}
-	entries, err := file.ReadDir(-1)
-	if err != nil {
+	entries, err := file.ReadDir(200001)
+	if err != nil && err != io.EOF {
 		return nil, err
+	}
+	if len(entries) > 200000 {
+		return nil, ErrScanLimit
 	}
 	_, after, err := inspect(path)
 	if err != nil {

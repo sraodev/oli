@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="780" viewBox="0 0 1500 780" role="img" aria-labelledby="title desc">
+<title id="title">Issue 4 recovery reviewer roadmap — platform proof in progress</title>
+<desc id="desc">Design approved. Candidate selection copied into the isolated worktree. Exclusive-move collision and process-kill probes pass; actual cross-volume testing awaits operator consent. Bounded quarantine, restore and purge remain unbuilt.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#475569"/></marker><style>text{font-family:Arial,sans-serif;fill:#172033}.title{font-size:32px;font-weight:700}.heading{font-size:23px;font-weight:700}.body{font-size:17px;fill:#475569}.label{font-size:19px;font-weight:700}.tag{font-size:13px;font-weight:700}.arrow{fill:none;stroke:#475569;stroke-width:2.5;marker-end:url(#arrow)}.built{fill:#dcfce7;stroke:#169447;stroke-width:2}.gate{fill:#fff4c8;stroke:#bf650a;stroke-width:2}.plan{fill:#e0f2fe;stroke:#0879b7;stroke-width:2}.stop{fill:#fee2e2;stroke:#cc2727;stroke-width:2}.later{fill:#f3e8ff;stroke:#8236d4;stroke-width:2}</style></defs>
+<rect width="1500" height="780" fill="white"/>
+<text x="44" y="58" class="title">#4 · Recoverable cleanup: design before mutation</text>
+<text x="44" y="92" class="body">PLATFORM SPIKE ONLY · Separate worktree · No recovery commands, publication, or personal-file cleanup</text>
+<rect x="44" y="118" width="240" height="36" rx="8" class="built"/><text x="60" y="142" class="tag">EXISTING / LOCAL FOUNDATION</text>
+<rect x="306" y="118" width="215" height="36" rx="8" class="gate"/><text x="322" y="142" class="tag">APPROVAL / PROOF GATE</text>
+<rect x="543" y="118" width="220" height="36" rx="8" class="plan"/><text x="559" y="142" class="tag">PROPOSED · NOT BUILT</text>
+<rect x="785" y="118" width="210" height="36" rx="8" class="stop"/><text x="801" y="142" class="tag">STOP AND PRESERVE</text>
+<text x="44" y="207" class="heading">Review sequence</text>
+<path d="M44 228H1456" stroke="#94a3b8" stroke-dasharray="7 6"/>
+<rect x="44" y="258" width="244" height="142" rx="10" class="built"/><text x="62" y="286" class="tag">1 · FOUNDATION</text><text x="62" y="317" class="label">Scan + selection</text><text x="62" y="346" class="body">Allowlist / revalidation</text><text x="62" y="374" class="body">Local issue #3 copied</text>
+<path d="M288 329H318" class="arrow"/>
+<rect x="328" y="258" width="244" height="142" rx="10" class="built"/><text x="346" y="286" class="tag">2 · DESIGN APPROVED</text><text x="346" y="317" class="label">Recovery contract</text><text x="346" y="346" class="body">Limits / retention / scope</text><text x="346" y="374" class="body">Opt-in quarantine only</text>
+<path d="M572 329H602" class="arrow"/>
+<rect x="612" y="258" width="244" height="142" rx="10" class="gate"/><text x="630" y="286" class="tag">3 · PARTIAL PROOF</text><text x="630" y="317" class="label">Exclusive move proof</text><text x="630" y="346" class="body">Collision / kill probes pass</text><text x="630" y="374" class="body">Volume test needs consent</text>
+<path d="M856 329H886" class="arrow"/>
+<rect x="896" y="258" width="244" height="142" rx="10" class="plan"/><text x="914" y="286" class="tag">4 · QUARANTINE</text><text x="914" y="317" class="label">Journal, then move</text><text x="914" y="346" class="body">Same filesystem only</text><text x="914" y="374" class="body">Moved ≠ reclaimed</text>
+<path d="M1140 329H1170" class="arrow"/>
+<rect x="1180" y="258" width="276" height="142" rx="10" class="plan"/><text x="1198" y="286" class="tag">5 · EXPLICIT NEXT ACTION</text><text x="1198" y="317" class="label">Restore OR purge</text><text x="1198" y="346" class="body">Restore: vacant original only</text><text x="1198" y="374" class="body">Purge: irreversible, selected</text>
+<path d="M1018 400V455" class="arrow"/><path d="M1318 400V435H1200V455" class="arrow"/>
+<rect x="896" y="466" width="560" height="117" rx="10" class="stop"/><text x="914" y="499" class="label">Changed / conflict / interrupted / unresolved</text><text x="914" y="530" class="body">Preserve payload; report per-item outcome</text><text x="914" y="558" class="body">Restart reconciles metadata — never auto-restores or purges</text>
+<rect x="44" y="466" width="812" height="117" rx="10" class="plan"/><text x="62" y="499" class="label">E2E acceptance before shipping</text><text x="62" y="530" class="body">Temporary fixtures: scan → quarantine → restart → restore / explicit purge</text><text x="62" y="558" class="body">Collision races · partial failures · permissions · cross-volume rejection · CLI/JSON/UI parity</text>
+<rect x="44" y="625" width="1412" height="111" rx="10" class="later"/><text x="62" y="658" class="label">Hard boundary: no silent conversion of permanent cleanup</text><text x="62" y="689" class="body">No automatic expiry or purge. No personal-folder/app deletion expansion. No copy-and-delete fallback.</text><text x="62" y="718" class="body">Proposed capacity: 10 GiB / 1,000 records / 128 candidates per operation. At the limit, stop admission — never evict.</text>
+</svg>

@@ -2,7 +2,7 @@
 //
 // The package deliberately knows nothing about the filesystem. Callers provide
 // a Service implementation, and mutation requests identify previously scanned
-// rules instead of accepting paths.
+// candidates (or legacy bulk rule IDs) instead of accepting paths.
 package dashboard
 
 import (
@@ -56,6 +56,7 @@ type Service interface {
 	Scan(context.Context, ScanRequest, func(ScanEvent) error) error
 	Clean(context.Context, CleanRequest, func(CleanEvent) error) error
 	Explore(context.Context, string) (*cleanup.Exploration, error)
+	Preview(context.Context, SelectionRequest) (*cleanup.Selection, error)
 }
 
 // DiskUsage is the measured capacity of the volume being cleaned.
@@ -119,9 +120,12 @@ type ScanCategory struct {
 	LargestItems      []ScanItem `json:"largest_items,omitempty"`
 }
 
-// ScanItem is display-only metadata for an item found by a rule. It is never
-// accepted by a mutation endpoint.
+// ScanItem exposes an opaque selection ID and display-only metadata. Mutation
+// endpoints accept only the ID, never this metadata or its path.
 type ScanItem struct {
+	CandidateID string `json:"candidate_id"`
+	Eligible    bool   `json:"eligible"`
+	Reason      string `json:"reason"`
 	Name        string `json:"name"`
 	Location    string `json:"location,omitempty"`
 	SizeBytes   uint64 `json:"size_bytes"`
@@ -130,6 +134,7 @@ type ScanItem struct {
 
 // ScanIssue reports a rule that could not be fully inspected.
 type ScanIssue struct {
+	Code        string `json:"code"`
 	RuleID      string `json:"rule_id,omitempty"`
 	Message     string `json:"message"`
 	Recoverable bool   `json:"recoverable"`
@@ -137,6 +142,9 @@ type ScanIssue struct {
 
 // ScanSummary closes a successful scan.
 type ScanSummary struct {
+	Partial          bool   `json:"partial"`
+	WarningsOmitted  int    `json:"warnings_omitted"`
+	LogicalBytes     uint64 `json:"logical_bytes"`
 	ScanID           string `json:"scan_id"`
 	FilesScanned     uint64 `json:"files_scanned"`
 	BytesScanned     uint64 `json:"bytes_scanned"`
@@ -148,8 +156,14 @@ type ScanSummary struct {
 // scan. Confirmation must be exactly "DELETE".
 type CleanRequest struct {
 	ScanID       string   `json:"scan_id"`
-	RuleIDs      []string `json:"rule_ids"`
+	RuleIDs      []string `json:"rule_ids,omitempty"`
+	CandidateIDs []string `json:"candidate_ids,omitempty"`
 	Confirmation string   `json:"confirmation"`
+}
+
+type SelectionRequest struct {
+	ScanID       string   `json:"scan_id"`
+	CandidateIDs []string `json:"candidate_ids"`
 }
 
 // CleanEvent is one line in the clean NDJSON stream. Supported event types are
@@ -167,6 +181,7 @@ type CleanEvent struct {
 
 // CleanIssue reports an item or rule that could not be cleaned.
 type CleanIssue struct {
+	Code    string `json:"code"`
 	RuleID  string `json:"rule_id,omitempty"`
 	Message string `json:"message"`
 }
@@ -175,15 +190,17 @@ type CleanIssue struct {
 // outcome. MeasuredReclaimedBytes should be based on volume readings before and
 // after cleanup rather than on summed file sizes.
 type CleanSummary struct {
-	SelectedBytes          uint64 `json:"selected_bytes"`
-	RemovedBytes           uint64 `json:"removed_bytes"`
-	MeasuredReclaimedBytes uint64 `json:"measured_reclaimed_bytes"`
-	RemovedItems           uint64 `json:"removed_items"`
-	FailedItems            uint64 `json:"failed_items"`
-	BeforeFreeBytes        uint64 `json:"before_free_bytes"`
-	AfterFreeBytes         uint64 `json:"after_free_bytes"`
-	DurationMillis         int64  `json:"duration_millis"`
-	Partial                bool   `json:"partial,omitempty"`
+	ObservedFreeSpaceChangeBytes int64  `json:"observed_free_space_change_bytes"`
+	ObservationAvailable         bool   `json:"observation_available"`
+	SelectedBytes                uint64 `json:"selected_bytes"`
+	RemovedBytes                 uint64 `json:"removed_bytes"`
+	MeasuredReclaimedBytes       uint64 `json:"measured_reclaimed_bytes"`
+	RemovedItems                 uint64 `json:"removed_items"`
+	FailedItems                  uint64 `json:"failed_items"`
+	BeforeFreeBytes              uint64 `json:"before_free_bytes"`
+	AfterFreeBytes               uint64 `json:"after_free_bytes"`
+	DurationMillis               int64  `json:"duration_millis"`
+	Partial                      bool   `json:"partial,omitempty"`
 }
 
 // Handler constructs the local dashboard HTTP handler.
@@ -265,6 +282,8 @@ func (a *appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.handleExplore(w, r)
 	case "/api/clean":
 		a.handleClean(w, r)
+	case "/api/selection":
+		a.handleSelection(w, r)
 	case "/", "/index.html":
 		serveEmbedded(w, r, "static/index.html", "text/html; charset=utf-8")
 	case "/assets/app.css":
@@ -348,6 +367,7 @@ func (a *appHandler) handleScan(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := a.service.Scan(ctx, request, emit); err != nil && ctx.Err() == nil {
 		_ = emit(ScanEvent{Type: "scan.issue", Issue: &ScanIssue{
+			Code:    cleanup.ErrorCode(err),
 			Message: "The scan stopped before it could finish.",
 		}})
 	}
@@ -381,6 +401,44 @@ func (a *appHandler) handleExplore(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, report)
 }
 
+func validCandidateIDs(ids []string) bool {
+	if len(ids) == 0 || len(ids) > 128 {
+		return false
+	}
+	seen := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		if !validIdentifier(id) || seen[id] {
+			return false
+		}
+		seen[id] = true
+	}
+	return true
+}
+
+func (a *appHandler) handleSelection(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w, http.MethodPost)
+		return
+	}
+	if !isJSON(r.Header.Get("Content-Type")) {
+		writeError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json.")
+		return
+	}
+	var request *SelectionRequest
+	if err := decodeRequest(w, r, &request); err != nil || request == nil || !validIdentifier(request.ScanID) || !validCandidateIDs(request.CandidateIDs) {
+		writeError(w, http.StatusBadRequest, "Select 1–128 unique candidate IDs from a completed scan.")
+		return
+	}
+	ctx, cancel := a.operationContext(r.Context())
+	defer cancel()
+	selection, err := a.service.Preview(ctx, *request)
+	if err != nil {
+		writeError(w, http.StatusConflict, "Selection is unavailable or stale. Review the current scan.")
+		return
+	}
+	writeJSON(w, http.StatusOK, selection)
+}
+
 func (a *appHandler) handleClean(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		methodNotAllowed(w, http.MethodPost)
@@ -390,7 +448,12 @@ func (a *appHandler) handleClean(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json.")
 		return
 	}
-	var decoded *CleanRequest
+	var decoded *struct {
+		ScanID       string          `json:"scan_id"`
+		RuleIDs      []string        `json:"rule_ids"`
+		CandidateIDs json.RawMessage `json:"candidate_ids"`
+		Confirmation string          `json:"confirmation"`
+	}
 	if err := decodeRequest(w, r, &decoded); err != nil || decoded == nil {
 		if err == nil {
 			err = errors.New("Request body must be one valid JSON object with only supported fields.")
@@ -398,7 +461,13 @@ func (a *appHandler) handleClean(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	request := *decoded
+	request := CleanRequest{ScanID: decoded.ScanID, RuleIDs: decoded.RuleIDs, Confirmation: decoded.Confirmation}
+	if len(decoded.CandidateIDs) != 0 {
+		if err := json.Unmarshal(decoded.CandidateIDs, &request.CandidateIDs); err != nil || !validCandidateIDs(request.CandidateIDs) || decoded.RuleIDs != nil {
+			writeError(w, http.StatusBadRequest, "Select 1–128 unique candidate IDs without rule_ids.")
+			return
+		}
+	}
 	if request.Confirmation != confirmationWord {
 		writeError(w, http.StatusBadRequest, `confirmation must be exactly "DELETE".`)
 		return
@@ -407,7 +476,7 @@ func (a *appHandler) handleClean(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "scan_id is invalid.")
 		return
 	}
-	if len(request.RuleIDs) == 0 || len(request.RuleIDs) > 128 {
+	if request.CandidateIDs == nil && (len(request.RuleIDs) == 0 || len(request.RuleIDs) > 128) {
 		writeError(w, http.StatusBadRequest, "rule_ids must contain between 1 and 128 rules.")
 		return
 	}
@@ -443,6 +512,7 @@ func (a *appHandler) handleClean(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := a.service.Clean(ctx, request, emit); err != nil && ctx.Err() == nil {
 		_ = emit(CleanEvent{Type: "clean.issue", Issue: &CleanIssue{
+			Code:    cleanup.ErrorCode(err),
 			Message: "Cleanup stopped before it could finish.",
 		}})
 	}
@@ -502,9 +572,25 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {
+	code := "operation_failed"
+	switch status {
+	case http.StatusBadRequest:
+		code = "invalid_arguments"
+	case http.StatusUnauthorized, http.StatusForbidden:
+		code = "unauthorized"
+	case http.StatusNotFound:
+		code = "not_found"
+	case http.StatusMethodNotAllowed:
+		code = "method_not_allowed"
+	case http.StatusConflict:
+		code = "conflict"
+	case http.StatusRequestEntityTooLarge:
+		code = "resource_limit"
+	}
 	writeJSON(w, status, struct {
+		Code  string `json:"code"`
 		Error string `json:"error"`
-	}{Error: message})
+	}{Code: code, Error: message})
 }
 
 func methodNotAllowed(w http.ResponseWriter, methods ...string) {

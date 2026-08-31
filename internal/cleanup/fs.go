@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -59,6 +60,8 @@ type frozenRule struct {
 }
 
 type frozenPlan struct {
+	mu          sync.Mutex
+	consumed    bool
 	engineToken [32]byte
 	scanID      string
 	rules       map[string]*frozenRule
@@ -252,6 +255,12 @@ func applyUniqueBytes(candidate *frozenCandidate, seen map[string]struct{}) {
 }
 
 func walkCandidate(ctx context.Context, home, rootPath, path string, rootDevice uint64) (*frozenCandidate, error) {
+	return walkCandidateBounded(ctx, home, rootPath, path, rootDevice, &scanBudget{remaining: 200000})
+}
+
+type scanBudget struct{ remaining int }
+
+func walkCandidateBounded(ctx context.Context, home, rootPath, path string, rootDevice uint64, budget *scanBudget) (*frozenCandidate, error) {
 	var entries []frozenEntry
 	var metrics Metrics
 	var walk func(string) error
@@ -259,6 +268,10 @@ func walkCandidate(ctx context.Context, home, rootPath, path string, rootDevice 
 		if err := ctx.Err(); err != nil {
 			return err
 		}
+		if budget.remaining <= 0 || strings.Count(strings.TrimPrefix(current, path), string(filepath.Separator)) > 64 {
+			return ErrScanLimit
+		}
+		budget.remaining--
 		info, fp, err := inspect(current)
 		if err != nil {
 			return err

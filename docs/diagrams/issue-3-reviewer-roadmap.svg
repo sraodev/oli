@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Issue 3 — scan-bound per-item cleanup review</title>
+  <desc id="desc">Reviewer roadmap: existing allowlisted scan and private manifest feed new candidate selection, exact preview, explicit confirmation, existing revalidation and removal, then measured outcomes. Invalid selection fails closed. Partial cleanup consumes the plan. Local implementation; publication pending. No new deletion roots or recovery feature.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10" fill="#475569"/></marker>
+    <style>
+      text { font-family: Arial, sans-serif; fill:#172033 }
+      .title { font-size:34px; font-weight:700 }
+      .section { font-size:25px; font-weight:700 }
+      .label { font-size:19px; font-weight:700 }
+      .body { font-size:16px; fill:#475569 }
+      .badge { font-size:13px; font-weight:700 }
+      .existing { fill:#dcfce7; stroke:#169447; stroke-width:2 }
+      .new { fill:#e0f2fe; stroke:#0879b7; stroke-width:2 }
+      .guard { fill:#fee2e2; stroke:#cc2727; stroke-width:2 }
+      .pending { fill:#fff4c8; stroke:#bf650a; stroke-width:2 }
+      .deferred { fill:#f3e8ff; stroke:#8236d4; stroke-width:2 }
+      .arrow { fill:none; stroke:#475569; stroke-width:2.5; marker-end:url(#arrow) }
+    </style>
+  </defs>
+  <rect width="1600" height="1000" fill="#fff"/>
+  <text x="48" y="64" class="title">#3 · Per-item review without new deletion authority</text>
+  <text x="48" y="99" class="body">F02 only · Mac Cleanup Studio · Local implementation and verification · No commit, push, or release in this task</text>
+  <rect x="48" y="124" width="210" height="36" rx="8" class="existing"/><text x="66" y="148" class="badge">EXISTING SAFEGUARD</text>
+  <rect x="277" y="124" width="210" height="36" rx="8" class="new"/><text x="295" y="148" class="badge">NEW IN ISSUE #3</text>
+  <rect x="506" y="124" width="210" height="36" rx="8" class="guard"/><text x="524" y="148" class="badge">REJECT / STOP</text>
+  <rect x="735" y="124" width="210" height="36" rx="8" class="pending"/><text x="753" y="148" class="badge">PENDING DELIVERY</text>
+  <rect x="964" y="124" width="210" height="36" rx="8" class="deferred"/><text x="982" y="148" class="badge">OUTSIDE F02</text>
+  <text x="48" y="215" class="section">Read-only discovery → exact subset → explicit action</text>
+  <text x="48" y="244" class="body">Dashboard keeps the current private scan; CLI interactive review scans and chooses within one process.</text>
+  <path d="M48 267H1550" stroke="#94a3b8" stroke-dasharray="7 6"/>
+  <rect x="48" y="296" width="270" height="150" rx="10" class="existing"/>
+  <text x="68" y="325" class="badge">1 · SCAN</text><text x="68" y="357" class="label">Allowlisted roots only</text>
+  <text x="68" y="387" class="body">Freeze manifest + metadata</text><text x="68" y="414" class="body">No personal-folder expansion</text>
+  <path d="M318 371H349" class="arrow"/>
+  <rect x="359" y="296" width="270" height="150" rx="10" class="new"/>
+  <text x="379" y="325" class="badge">2 · REVIEW</text><text x="379" y="357" class="label">Scan-bound candidates</text>
+  <text x="379" y="387" class="body">Path · size · age · risk · reason</text><text x="379" y="414" class="body">Select / deselect eligible items</text>
+  <path d="M629 371H660" class="arrow"/>
+  <rect x="670" y="296" width="270" height="150" rx="10" class="new"/>
+  <text x="690" y="325" class="badge">3 · PREVIEW</text><text x="690" y="357" class="label">Private-plan totals</text>
+  <text x="690" y="387" class="body">Hard-linked bytes count once</text><text x="690" y="414" class="body">CLI JSON + API + dashboard</text>
+  <path d="M940 371H971" class="arrow"/>
+  <rect x="981" y="296" width="270" height="150" rx="10" class="new"/>
+  <text x="1001" y="325" class="badge">4 · CONFIRM</text><text x="1001" y="357" class="label">Only this subset</text>
+  <text x="1001" y="387" class="body">UI / interactive CLI: DELETE</text><text x="1001" y="414" class="body">CLI apply also: --apply --yes</text>
+  <path d="M1251 371H1282" class="arrow"/>
+  <rect x="1292" y="296" width="260" height="150" rx="10" class="new"/>
+  <text x="1312" y="325" class="badge">5 · CLAIM PLAN + APPLY</text><text x="1312" y="357" class="label">Verify, then remove</text>
+  <text x="1312" y="387" class="body">Root / entry identity checks</text><text x="1312" y="414" class="body">Descriptor-relative deletion</text>
+  <path d="M494 446V499" class="arrow"/>
+  <path d="M805 446V482H595V499" class="arrow"/>
+  <rect x="359" y="510" width="581" height="126" rx="10" class="guard"/>
+  <text x="379" y="544" class="label">Fail closed before action</text>
+  <text x="379" y="576" class="body">Empty, unknown, duplicate, stale, foreign or ineligible IDs</text>
+  <text x="379" y="606" class="body">No deletion paths · no mixed selectors · API limit: 128 IDs</text>
+  <path d="M1422 446V499" class="arrow"/>
+  <rect x="981" y="510" width="571" height="126" rx="10" class="new"/>
+  <text x="1001" y="544" class="label">6 · Report outcomes; rescan to retry</text>
+  <text x="1001" y="576" class="body">Removed / rejected / failed + measured free-space change</text>
+  <text x="1001" y="606" class="body">Deselected entries survive · partial outcome requires rescan</text>
+  <text x="48" y="690" class="section">Reviewer route and delivery boundary</text>
+  <rect x="48" y="719" width="581" height="117" rx="10" class="new"/>
+  <text x="68" y="752" class="label">Evidence to inspect</text>
+  <text x="68" y="782" class="body">Engine safety → CLI / HTTP fixture E2E → browser review</text>
+  <text x="68" y="809" class="body">Race tests · permission failure · cancellation · both Mac builds</text>
+  <path d="M629 777H660" class="arrow"/>
+  <rect x="670" y="719" width="390" height="117" rx="10" class="pending"/>
+  <text x="690" y="752" class="label">Commit / PR / release pending</text>
+  <text x="690" y="782" class="body">Local verification is not publication</text>
+  <text x="690" y="809" class="body">No issue closure implied</text>
+  <rect x="1090" y="719" width="462" height="117" rx="10" class="deferred"/>
+  <text x="1110" y="752" class="label">Separate roadmap work</text>
+  <text x="1110" y="782" class="body">Trash / restore · persistent keep decisions</text>
+  <text x="1110" y="809" class="body">New cleanup roots · binary distribution</text>
+  <rect x="48" y="872" width="1504" height="86" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="68" y="905" class="label">Hard boundary for #3</text>
+  <text x="68" y="934" class="body">IDs only narrow an existing private plan. They never grant new paths, bypass eligibility, or promise that APFS will release the estimated bytes.</text>
+</svg>

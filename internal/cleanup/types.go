@@ -65,6 +65,7 @@ type Metrics struct {
 // Candidate is one direct child of a rule root. Fingerprint identifies the
 // private frozen manifest used during cleanup; it is not a content hash.
 type Candidate struct {
+	Risk              Risk      `json:"risk"`
 	ID                string    `json:"id"`
 	RuleID            string    `json:"rule_id"`
 	DisplayPath       string    `json:"display_path"`
@@ -99,14 +100,16 @@ type RuleScan struct {
 // Scan is a read-only cleanup proposal. Its exported data can be freely used
 // by clients; Clean relies only on the private frozen plan created with it.
 type Scan struct {
-	ID          string     `json:"id"`
-	StartedAt   time.Time  `json:"started_at"`
-	CompletedAt time.Time  `json:"completed_at"`
-	Rules       []RuleScan `json:"rules"`
-	Detected    Metrics    `json:"detected"`
-	Eligible    Metrics    `json:"eligible"`
-	Warnings    []Warning  `json:"warnings,omitempty"`
-	plan        *frozenPlan
+	Partial         bool       `json:"partial"`
+	WarningsOmitted int        `json:"warnings_omitted"`
+	ID              string     `json:"id"`
+	StartedAt       time.Time  `json:"started_at"`
+	CompletedAt     time.Time  `json:"completed_at"`
+	Rules           []RuleScan `json:"rules"`
+	Detected        Metrics    `json:"detected"`
+	Eligible        Metrics    `json:"eligible"`
+	Warnings        []Warning  `json:"warnings,omitempty"`
+	plan            *frozenPlan
 }
 
 // ReleaseScanOnlyManifests drops recursive private manifests for report-only
@@ -117,6 +120,8 @@ func (s *Scan) ReleaseScanOnlyManifests() {
 	if s == nil || s.plan == nil {
 		return
 	}
+	s.plan.mu.Lock()
+	defer s.plan.mu.Unlock()
 	for _, rule := range s.plan.rules {
 		if rule.action != ActionScanOnly {
 			continue
@@ -160,14 +165,28 @@ type Event struct {
 type Callback func(Event)
 
 type ScanOptions struct {
-	RuleIDs  []string  `json:"rule_ids,omitempty"`
-	Callback Callback  `json:"-"`
-	Now      time.Time `json:"-"`
+	entryLimit     int
+	candidateLimit int
+	RuleIDs        []string  `json:"rule_ids,omitempty"`
+	Callback       Callback  `json:"-"`
+	Now            time.Time `json:"-"`
 }
 
 type CleanOptions struct {
-	RuleIDs  []string `json:"rule_ids"`
-	Callback Callback `json:"-"`
+	RuleIDs []string `json:"rule_ids,omitempty"`
+	// A non-nil CandidateIDs selects exact scan-bound candidates instead of rules.
+	// An empty explicit selection is an error, never a request for all candidates.
+	CandidateIDs []string `json:"candidate_ids,omitempty"`
+	Callback     Callback `json:"-"`
+}
+
+// Selection is a detached preview, never deletion authority.
+type Selection struct {
+	ScanID       string      `json:"scan_id"`
+	RuleIDs      []string    `json:"rule_ids"`
+	CandidateIDs []string    `json:"candidate_ids"`
+	Candidates   []Candidate `json:"candidates"`
+	Metrics      Metrics     `json:"metrics"`
 }
 
 // CandidateOutcome records a candidate that was removed, skipped, or rejected.

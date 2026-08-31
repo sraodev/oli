@@ -91,8 +91,17 @@ func TestDashboardServiceScanAndSingleUseClean(t *testing.T) {
 	if scanID == "" || category == nil {
 		t.Fatalf("scanID=%q category=%#v", scanID, category)
 	}
-	if category.Action != dashboard.ActionClean || category.ItemCount != 1 || category.ReclaimableBytes == 0 {
+	if category.Action != dashboard.ActionClean || category.ItemCount != 2 || category.ReclaimableBytes == 0 {
 		t.Fatalf("category = %#v", category)
+	}
+	eligible := 0
+	for _, item := range category.LargestItems {
+		if item.Eligible {
+			eligible++
+		}
+	}
+	if eligible != 1 {
+		t.Fatalf("eligible items = %d, want 1", eligible)
 	}
 
 	var issues int

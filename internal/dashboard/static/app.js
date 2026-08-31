@@ -2,6 +2,7 @@
   "use strict";
 
   const elements = {
+    selectionStatus: document.querySelector("#selection-status"),
     atlasButton: document.querySelector("#atlas-button"),
     atlasScope: document.querySelector("#atlas-scope"),
     atlasStatus: document.querySelector("#atlas-status"),
@@ -79,6 +80,8 @@
     scanID: "",
     scanning: false,
     selected: new Set(),
+    selectionReady: false,
+    selectionVersion: 0,
     token: "",
     toastTimer: 0,
   };
@@ -257,7 +260,7 @@
       elements.atlasButton.disabled = !state.token;
       state.scanAbortController = null;
       elements.scanButton.querySelector("span:last-child").textContent = "Scan this Mac";
-      elements.scanProgressTitle.textContent = state.scanID ? "Scan complete" : "Scan stopped";
+      if (!state.scanID) elements.scanProgressTitle.textContent = "Scan stopped";
       setProfileDisabled(false);
       updateSelection();
     }
@@ -323,7 +326,7 @@
       item_count: nonNegativeNumber(category.item_count),
     };
     const actionClean = normalized.action === "clean";
-    const cleanable = actionClean && normalized.reclaimable_bytes > 0;
+    const cleanable = actionClean && (normalized.largest_items || []).some(item => item.eligible && isIdentifier(item.candidate_id));
     const scanOnly = !actionClean;
     const existing = elements.categoryGrid.querySelector(`[data-rule-id="${window.CSS.escape(normalized.rule_id)}"]`);
     if (existing) {
@@ -375,10 +378,18 @@
     for (const item of candidates) {
       const row = document.createElement("li");
       const copy = document.createElement("span");
+      const pick = document.createElement("input");
+      pick.type = "checkbox";
+      pick.className = "candidate-checkbox";
+      pick.value = item.candidate_id || "";
+      pick.disabled = !actionClean || !item.eligible || !isIdentifier(item.candidate_id);
+      pick.checked = !pick.disabled && checkbox.checked;
+      pick.setAttribute("aria-label", `Select ${displayString(item.name, "candidate")}`);
+      pick.addEventListener("change", () => { resetConfirmation(); updateSelection(); });
       const itemName = displayString(item.name, "Unnamed item");
       const name = document.createTextNode(itemName);
       copy.append(name);
-      const metadata = [displayString(item.location, ""), safeString(item.modified_age, "")].filter(Boolean).join(" · ");
+      const metadata = [safeString(item.modified_age, ""), `${normalized.risk} risk`, item.eligible ? "Eligible" : "Not eligible", safeString(item.reason, "")].filter(Boolean).join(" · ");
       copy.title = [itemName, metadata].filter(Boolean).join(" · ");
       if (metadata) {
         const small = document.createElement("small");
@@ -387,11 +398,12 @@
       }
       const itemSize = document.createElement("strong");
       itemSize.textContent = formatBytes(item.size_bytes);
-      row.append(copy, itemSize);
+      row.append(pick, copy, itemSize);
       list.append(row);
     }
 
     checkbox.addEventListener("change", () => {
+      for (const item of card.querySelectorAll(".candidate-checkbox:not(:disabled)")) { item.checked = checkbox.checked; }
       resetConfirmation();
       updateSelection();
     });
@@ -412,50 +424,75 @@
   }
 
   function completeScan(summary) {
+    elements.scanProgressTitle.textContent = summary.partial ? "Scan finished · incomplete coverage" : "Scan complete";
     if (isIdentifier(summary.scan_id)) {
       state.scanID = summary.scan_id;
     }
-    const reclaimable = nonNegativeNumber(summary.reclaimable_bytes) || sumCategories();
+    const reclaimable = nonNegativeNumber(summary.reclaimable_bytes);
     setScanProgress(100);
     elements.scanProgressDetail.textContent = `${formatCount(summary.files_scanned)} inspected · ${formatDuration(summary.duration_millis)}`;
     elements.reclaimableTotal.textContent = formatBytes(reclaimable);
     elements.reclaimableCaption.textContent = `${formatCount(summary.files_scanned)} items inspected`;
-    elements.resultSummary.textContent = `${state.categories.size} ${pluralize("rule", state.categories.size)} · ${formatBytes(reclaimable)} reclaimable`;
-    elements.opportunityNote.textContent = "Review each selected rule below. The final result is measured from disk space before and after cleanup.";
+    elements.resultSummary.textContent = `${summary.partial ? "Incomplete coverage · " : ""}${state.categories.size} ${pluralize("rule", state.categories.size)} · ${formatBytes(reclaimable)} estimated`;
+    elements.opportunityNote.textContent = "Review individual candidates below. A directory includes its scanned contents; final disk-space change is measured after cleanup.";
+    if (summary.partial) {
+      elements.opportunityNote.textContent = `Some locations were not fully inspected. These totals cover only measured items, not all disk usage. ${nonNegativeNumber(summary.warnings_omitted)} additional warnings omitted.`;
+    }
   }
 
-  function updateSelection() {
+  async function updateSelection() {
+    const version = ++state.selectionVersion;
+    state.selectionReady = false;
     state.selected.clear();
-    let bytes = 0;
     for (const checkbox of elements.categoryGrid.querySelectorAll(".rule-checkbox")) {
       const card = checkbox.closest(".category-card");
-      card?.classList.toggle("is-selected", checkbox.checked);
-      if (checkbox.checked && state.categories.has(checkbox.value)) {
-        state.selected.add(checkbox.value);
-        bytes += state.categories.get(checkbox.value).reclaimable_bytes;
-      }
+      const items = [...card.querySelectorAll(".candidate-checkbox:not(:disabled)")];
+      const checked = items.filter(item => item.checked);
+      checkbox.checked = items.length > 0 && checked.length === items.length;
+      checkbox.indeterminate = checked.length > 0 && checked.length < items.length;
+      card.classList.toggle("is-selected", checked.length > 0);
+      for (const item of checked) state.selected.add(item.value);
     }
     const count = state.selected.size;
-    elements.selectedTotal.textContent = formatBytes(bytes);
+    elements.selectedTotal.textContent = count ? "…" : "0 B";
     elements.selectedCount.textContent = String(count);
-    elements.dockTotal.textContent = formatBytes(bytes);
-    elements.dockRules.textContent = `${count} ${pluralize("rule", count)}`;
+    elements.dockTotal.textContent = count ? "…" : "0 B";
+    elements.dockRules.textContent = `${count} ${pluralize("candidate", count)}`;
     elements.cleanupDock.hidden = count === 0 || !state.scanID || state.cleaning;
+    elements.selectionStatus.textContent = "";
     updateCleanButton();
+    if (!count || !state.scanID || state.scanning || state.cleaning) return;
+    if (count > 128) { elements.selectionStatus.textContent = "Select at most 128 candidates per cleanup. Nothing has been deleted."; return; }
+    elements.selectionStatus.textContent = "Checking selection totals against the current scan…";
+    try {
+      const response = await api("/api/selection", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({scan_id: state.scanID, candidate_ids: [...state.selected]}) });
+      if (!response.ok) throw new Error(await responseError(response));
+      const selection = await response.json();
+      if (version !== state.selectionVersion) return;
+      if (selection.scan_id !== state.scanID || selection.candidate_ids.length !== count || !selection.candidate_ids.every(id => state.selected.has(id))) throw new Error("Selection changed. Scan again before cleaning.");
+      elements.selectedTotal.textContent = formatBytes(selection.metrics.allocated_bytes);
+      elements.dockTotal.textContent = formatBytes(selection.metrics.allocated_bytes);
+      elements.selectionStatus.textContent = `${count} selected · ${formatBytes(selection.metrics.allocated_bytes)} allocated estimate · ${formatBytes(selection.metrics.logical_bytes)} logical. Shared hard-linked data counts once.`;
+      state.selectionReady = true;
+    } catch (error) {
+      if (version === state.selectionVersion) elements.selectionStatus.textContent = error.message || "Selection could not be verified. Review or rescan.";
+    }
+    if (version === state.selectionVersion) updateCleanButton();
   }
 
   async function startClean() {
-    if (state.cleaning || state.exploring || state.scanning || !state.scanID || !state.selected.size || elements.confirmationInput.value !== "DELETE") {
+    if (state.cleaning || state.exploring || state.scanning || !state.selectionReady || !state.scanID || !state.selected.size || elements.confirmationInput.value !== "DELETE") {
       return;
     }
-    const selectedRules = [...state.selected];
+    const selectedCandidates = [...state.selected];
     state.cleaning = true;
+    for (const item of elements.categoryGrid.querySelectorAll(".rule-checkbox, .candidate-checkbox")) item.disabled = true;
     elements.atlasButton.disabled = true;
     elements.cleanupDock.hidden = true;
     elements.activity.hidden = false;
     elements.activityLog.replaceChildren();
     elements.activityTotal.textContent = "0 B removed";
-    elements.cleanProgressTitle.textContent = "Cleaning selected rules…";
+    elements.cleanProgressTitle.textContent = "Cleaning selected candidates…";
     elements.cleanProgressDetail.textContent = "Validating the completed scan";
     setCleanProgress(0);
     elements.scanButton.disabled = true;
@@ -468,7 +505,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           scan_id: state.scanID,
-          rule_ids: selectedRules,
+          candidate_ids: selectedCandidates,
           confirmation: "DELETE",
         }),
       });
@@ -478,6 +515,9 @@
       showToast(error.message || "Cleanup could not finish.");
     } finally {
       state.cleaning = false;
+      state.scanID = "";
+      for (const item of elements.categoryGrid.querySelectorAll(".rule-checkbox, .candidate-checkbox")) { item.checked = false; item.disabled = true; }
+      elements.resultSummary.textContent = "Results are now historical · scan again to refresh";
       elements.atlasButton.disabled = !state.token;
       elements.scanButton.disabled = false;
       setProfileDisabled(false);
@@ -495,7 +535,7 @@
       case "clean.progress": {
         const progress = normalizeProgress(event.progress);
         setCleanProgress(progress);
-        elements.cleanProgressDetail.textContent = event.message || (event.rule_id ? `Cleaning ${event.rule_id}` : "Cleaning selected rules");
+        elements.cleanProgressDetail.textContent = event.message || (event.rule_id ? `Cleaning ${event.rule_id}` : "Cleaning selected candidates");
         const removed = nonNegativeNumber(event.removed_bytes);
         elements.activityTotal.textContent = `${formatBytes(removed)} removed`;
         if (event.message || event.rule_id) {
@@ -521,15 +561,15 @@
     setCleanProgress(normalizeProgress(event.progress));
     const removedItems = nonNegativeNumber(summary.removed_items);
     const removedBytes = nonNegativeNumber(summary.removed_bytes);
-    const measured = nonNegativeNumber(summary.measured_reclaimed_bytes);
+    const observed = observationText(summary);
     elements.cleanProgressTitle.textContent = "Cleanup stopped";
     elements.cleanProgressDetail.textContent = `${formatCount(removedItems)} ${pluralize("candidate", removedItems)} removed before it stopped`;
-    elements.activityTotal.textContent = `${formatBytes(measured)} measured reclaimed`;
+    elements.activityTotal.textContent = observed;
     addActivity(event.message || "Cleanup stopped after making partial progress.", `${formatBytes(removedBytes)} removed`, true);
 
     state.scanID = "";
     state.selected.clear();
-    for (const checkbox of elements.categoryGrid.querySelectorAll(".rule-checkbox")) {
+    for (const checkbox of elements.categoryGrid.querySelectorAll(".rule-checkbox, .candidate-checkbox")) {
       checkbox.checked = false;
       checkbox.disabled = true;
     }
@@ -540,14 +580,15 @@
 
   function completeClean(summary) {
     setCleanProgress(100);
-    const measured = nonNegativeNumber(summary.measured_reclaimed_bytes);
+    const measured = Number(summary.observed_free_space_change_bytes) || 0;
+    const observed = observationText(summary);
     const removed = nonNegativeNumber(summary.removed_bytes);
-    elements.cleanProgressTitle.textContent = "Cleanup complete";
+    elements.cleanProgressTitle.textContent = summary.partial ? "Cleanup finished with issues" : "Cleanup complete";
     elements.cleanProgressDetail.textContent = `${formatCount(summary.removed_items)} removed · ${formatDuration(summary.duration_millis)}`;
-    elements.activityTotal.textContent = `${formatBytes(measured)} measured reclaimed`;
-    addActivity("Measured disk space after cleanup", formatBytes(measured));
+    elements.activityTotal.textContent = observed;
+    addActivity("Observed disk space after cleanup", observed);
 
-    elements.measuredTotal.textContent = formatBytes(measured);
+    elements.measuredTotal.textContent = summary.observation_available === false ? "Unavailable" : `${measured < 0 ? "−" : "+"}${formatBytes(Math.abs(measured))}`;
     elements.outcomeSelected.textContent = formatBytes(summary.selected_bytes);
     elements.outcomeItems.textContent = formatCount(summary.removed_items);
     elements.outcomeDuration.textContent = formatDuration(summary.duration_millis);
@@ -557,12 +598,12 @@
       ? `The measured result differs from summed item sizes by ${formatBytes(Math.abs(delta))}. macOS can reclaim or allocate space while cleanup runs.`
       : "The measured disk-space result closely matches the summed sizes of removed items.";
     if (nonNegativeNumber(summary.failed_items) > 0) {
-      elements.outcomeNote.textContent += ` ${formatCount(summary.failed_items)} could not be removed and were left in place.`;
+      elements.outcomeNote.textContent += ` ${formatCount(summary.failed_items)} candidates could not be fully removed; some contents may already be gone.`;
     }
 
     state.scanID = "";
     state.selected.clear();
-    for (const checkbox of elements.categoryGrid.querySelectorAll(".rule-checkbox")) {
+    for (const checkbox of elements.categoryGrid.querySelectorAll(".rule-checkbox, .candidate-checkbox")) {
       checkbox.checked = false;
       checkbox.disabled = true;
     }
@@ -573,6 +614,12 @@
       elements.outcomeDialog.setAttribute("open", "");
     }
     void loadDisk();
+  }
+
+  function observationText(summary) {
+    if (summary.observation_available === false) return "Free-space observation unavailable";
+    const delta = Number(summary.observed_free_space_change_bytes) || 0;
+    return `${delta < 0 ? "−" : "+"}${formatBytes(Math.abs(delta))} observed free-space change`;
   }
 
   function addActivity(message, value, isError = false) {
@@ -619,7 +666,7 @@
   function updateCleanButton() {
     const valid = elements.confirmationInput.value === "DELETE";
     elements.confirmationInput.classList.toggle("is-valid", valid);
-    elements.cleanButton.disabled = !valid || !state.scanID || state.selected.size === 0 || state.cleaning || state.scanning || state.exploring;
+    elements.cleanButton.disabled = !valid || !state.selectionReady || !state.scanID || state.selected.size === 0 || state.cleaning || state.scanning || state.exploring;
   }
 
   function setConnection(label, kind) {
@@ -655,14 +702,6 @@
       return `${formatCount(files)} inspected · ${formatBytes(bytes)} read`;
     }
     return "Inspecting cleanup categories";
-  }
-
-  function sumCategories() {
-    let total = 0;
-    for (const category of state.categories.values()) {
-      total += category.reclaimable_bytes;
-    }
-    return total;
   }
 
   function formatBytes(value) {
@@ -748,7 +787,7 @@
     }
   });
   elements.selectNone.addEventListener("click", () => {
-    for (const checkbox of elements.categoryGrid.querySelectorAll(".rule-checkbox")) {
+    for (const checkbox of elements.categoryGrid.querySelectorAll(".candidate-checkbox")) {
       checkbox.checked = false;
     }
     resetConfirmation();
@@ -758,7 +797,7 @@
     for (const checkbox of elements.categoryGrid.querySelectorAll(".rule-checkbox")) {
       const category = state.categories.get(checkbox.value);
       if (!checkbox.disabled && category?.risk === "low") {
-        checkbox.checked = true;
+        for (const item of checkbox.closest(".category-card").querySelectorAll(".candidate-checkbox:not(:disabled)")) { item.checked = true; }
       }
     }
     resetConfirmation();

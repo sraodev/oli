@@ -16,10 +16,18 @@ import (
 const testToken = "0123456789abcdef0123456789abcdef"
 
 type fakeService struct {
+	previewFn func(context.Context, SelectionRequest) (*cleanup.Selection, error)
 	diskFn    func(context.Context) (DiskUsage, error)
 	scanFn    func(context.Context, ScanRequest, func(ScanEvent) error) error
 	cleanFn   func(context.Context, CleanRequest, func(CleanEvent) error) error
 	exploreFn func(context.Context, string) (*cleanup.Exploration, error)
+}
+
+func (f *fakeService) Preview(ctx context.Context, request SelectionRequest) (*cleanup.Selection, error) {
+	if f.previewFn != nil {
+		return f.previewFn(ctx, request)
+	}
+	return &cleanup.Selection{ScanID: request.ScanID, CandidateIDs: request.CandidateIDs}, nil
 }
 
 func (f *fakeService) Explore(ctx context.Context, scope string) (*cleanup.Exploration, error) {

@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	ErrScanLimit   = errors.New("cleanup: scan resource limit reached; coverage is incomplete")
 	errRootMissing = errors.New("cleanup: root is missing")
 	errRootSymlink = errors.New("cleanup: root path contains a symlink")
 )
@@ -19,6 +20,20 @@ var (
 func (e *Engine) Scan(ctx context.Context, opts ScanOptions) (*Scan, error) {
 	if ctx == nil {
 		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	if opts.entryLimit <= 0 {
+		opts.entryLimit = 200000
+	}
+	if opts.candidateLimit <= 0 {
+		opts.candidateLimit = 2000
+	}
+	budget := &scanBudget{remaining: opts.entryLimit}
+	candidatesSeen := 0
+	protection, err := e.loadProtection()
+	if err != nil {
+		return nil, err
 	}
 	rules, err := e.selectedRules(opts.RuleIDs, true)
 	if err != nil {
@@ -49,6 +64,11 @@ func (e *Engine) Scan(ctx context.Context, opts ScanOptions) (*Scan, error) {
 		result := RuleScan{Rule: cloneRuleInfo(rule.info)}
 
 		addWarning := func(warning Warning) {
+			scan.Partial = true
+			if len(scan.Warnings) >= 100 {
+				scan.WarningsOmitted++
+				return
+			}
 			result.Warnings = append(result.Warnings, warning)
 			scan.Warnings = append(scan.Warnings, warning)
 			payload := warning
@@ -87,8 +107,12 @@ func (e *Engine) Scan(ctx context.Context, opts ScanOptions) (*Scan, error) {
 
 			children, err := readDirNoFollow(root.path, rootFP)
 			if err != nil {
+				code := "root_unreadable"
+				if errors.Is(err, ErrScanLimit) {
+					code = "scan_limit"
+				}
 				addWarning(Warning{
-					RuleID: rule.rule.ID, DisplayPath: root.display, Code: "root_unreadable",
+					RuleID: rule.rule.ID, DisplayPath: root.display, Code: code,
 					Message: fmt.Sprintf("Skipped %s: %s", root.display, publicError(e.home, err)),
 				})
 				continue
@@ -96,20 +120,35 @@ func (e *Engine) Scan(ctx context.Context, opts ScanOptions) (*Scan, error) {
 			sortDirEntries(children)
 			var rootCandidates []*frozenCandidate
 			for _, child := range children {
+				if budget.remaining <= 0 || candidatesSeen >= opts.candidateLimit {
+					addWarning(Warning{RuleID: rule.rule.ID, DisplayPath: root.display, Code: "scan_limit", Message: ErrScanLimit.Error()})
+					break
+				}
+				candidatesSeen++
 				if err := ctx.Err(); err != nil {
 					return nil, err
 				}
 				path := filepath.Join(root.path, child.Name())
-				candidate, err := walkCandidate(ctx, e.home, root.path, path, rootFP.Device)
+				candidate, err := walkCandidateBounded(ctx, e.home, root.path, path, rootFP.Device, budget)
 				if err != nil {
+					code := "candidate_unavailable"
+					if errors.Is(err, ErrScanLimit) {
+						code = "scan_limit"
+					}
 					addWarning(Warning{
-						RuleID: rule.rule.ID, DisplayPath: displayPath(e.home, path), Code: "candidate_unavailable",
+						RuleID: rule.rule.ID, DisplayPath: displayPath(e.home, path), Code: code,
 						Message: fmt.Sprintf("Skipped %s: %s", displayPath(e.home, path), publicError(e.home, err)),
 					})
 					continue
 				}
 				applyUniqueBytes(candidate, make(map[string]struct{}))
 				finishCandidate(candidate, rule, root, now, e.home)
+				if protection.protects(candidate) {
+					candidate.summary.Eligible = false
+					candidate.summary.AutoEligible = false
+					candidate.summary.EligibilityReason = "protected by a persistent exclusion"
+				}
+				candidate.summary.ID = id + "-" + candidate.summary.Fingerprint[:24]
 				rootCandidates = append(rootCandidates, candidate)
 			}
 
@@ -149,6 +188,9 @@ func (e *Engine) Scan(ctx context.Context, opts ScanOptions) (*Scan, error) {
 	scan.Detected = metricsForCandidates(all, false)
 	scan.Eligible = metricsForCandidates(all, true)
 	scan.CompletedAt = time.Now()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	emit(opts.Callback, Event{Kind: EventScanCompleted})
 	return scan, nil
 }
@@ -209,7 +251,7 @@ func finishCandidate(candidate *frozenCandidate, rule compiledRule, root compile
 			reason = fmt.Sprintf("modified within the last %s", formatAge(rule.rule.MinimumAge))
 		}
 	}
-	candidate.summary.ID = rule.rule.ID + "-" + digest[:16]
+	candidate.summary.Risk = rule.rule.Risk
 	candidate.summary.RuleID = rule.rule.ID
 	candidate.summary.DisplayPath = top.display
 	candidate.summary.RootDisplayPath = root.display

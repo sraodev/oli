@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040" role="img" aria-labelledby="title desc">
+<title id="title">P0 trust and delivery reviewer roadmap</title>
+<desc id="desc">Existing storage discovery feeds local candidate review, persistent protection, bounded contracts and truthful outcomes. Recovery lifecycle and public release acceptance remain open gates.</desc>
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10" fill="#475569"/></marker>
+<style>
+text{font-family:Arial,Helvetica,sans-serif;fill:#172033}.title{font-size:34px;font-weight:700}.heading{font-size:25px;font-weight:700}.body{font-size:17px;fill:#475569}.label{font-size:14px;font-weight:700}.box-title{font-size:22px;font-weight:700}.lane{font-size:15px;font-weight:700;fill:#475569}.built{fill:#dcfce7;stroke:#15803d}.local{fill:#e0f2fe;stroke:#0284c7}.partial{fill:#fef3c7;stroke:#b45309}.needed{fill:#fee2e2;stroke:#dc2626}.gate{fill:#f3e8ff;stroke:#7c3aed}.box{stroke-width:2;rx:10}.flow{fill:none;stroke:#475569;stroke-width:2.5;marker-end:url(#arrow)}
+</style>
+</defs>
+<rect width="1600" height="1040" fill="white"/>
+<text x="44" y="59" class="title">P0 Trust + Delivery · Reviewer Roadmap</text>
+<text x="44" y="91" class="body">Issues #2–#8 · base eac8989 · local work, not a published release · 1 September 2026</text>
+<g class="label" text-anchor="middle">
+<rect x="44" y="116" width="218" height="38" class="box built"/><text x="153" y="141">EXISTING / MERGED</text>
+<rect x="280" y="116" width="218" height="38" class="box local"/><text x="389" y="141">LOCAL / TESTED</text>
+<rect x="516" y="116" width="218" height="38" class="box partial"/><text x="625" y="141">PARTIAL</text>
+<rect x="752" y="116" width="218" height="38" class="box needed"/><text x="861" y="141">NEEDS IMPLEMENTATION</text>
+<rect x="988" y="116" width="246" height="38" class="box gate"/><text x="1111" y="141">EXTERNAL / APPROVAL GATE</text>
+</g>
+<g class="lane"><text x="44" y="199">DISCOVER</text><text x="355" y="199">REVIEW</text><text x="666" y="199">PROTECT</text><text x="977" y="199">REVALIDATE</text><text x="1288" y="199">VERIFY</text></g>
+<path d="M44 215H1556" stroke="#94a3b8" stroke-dasharray="7 7"/>
+<text x="44" y="260" class="heading">Current cleanup path</text>
+<text x="44" y="289" class="body">Personal-folder exploration stays read-only; only compiled cleanup candidates can enter a deletion plan.</text>
+<g transform="translate(44 312)"><rect width="264" height="134" class="box built"/><text x="16" y="28" class="label">#2 · EXISTING</text><text x="16" y="61" class="box-title">Storage Atlas</text><text x="16" y="91" class="body">Metadata + fixed scopes</text><text x="16" y="117" class="body">No cleanup authority</text></g>
+<g transform="translate(355 312)"><rect width="264" height="134" class="box local"/><text x="16" y="28" class="label">#3 · LOCAL / TESTED</text><text x="16" y="61" class="box-title">Per-item review</text><text x="16" y="91" class="body">Opaque scan-bound IDs</text><text x="16" y="117" class="body">CLI + API + dashboard</text></g>
+<g transform="translate(666 312)"><rect width="264" height="134" class="box local"/><text x="16" y="28" class="label">#5 · LOCAL / TESTED</text><text x="16" y="61" class="box-title">Persistent exclusions</text><text x="16" y="91" class="body">Only narrow the plan</text><text x="16" y="117" class="body">Reload before each candidate</text></g>
+<g transform="translate(977 312)"><rect width="264" height="134" class="box local"/><text x="16" y="28" class="label">#7 · LOCAL / TESTED</text><text x="16" y="61" class="box-title">Bounded contracts</text><text x="16" y="91" class="body">Stable errors + cancellation</text><text x="16" y="117" class="body">Private single-use plan</text></g>
+<g transform="translate(1288 312)"><rect width="268" height="134" class="box local"/><text x="16" y="28" class="label">#6 · LOCAL / TESTED</text><text x="16" y="61" class="box-title">Honest outcomes</text><text x="16" y="91" class="body">Deduplicated estimates</text><text x="16" y="117" class="body">Signed delta + partial flags</text></g>
+<path d="M308 379H346M619 379H657M930 379H968M1241 379H1279" class="flow"/>
+<text x="44" y="500" class="heading">Recovery is not an exposed feature</text>
+<text x="44" y="529" class="body">#4 has a same-volume platform spike. Passing that spike is not a restore, restart-reconciliation or purge implementation.</text>
+<g transform="translate(44 552)"><rect width="332" height="124" class="box partial"/><text x="16" y="28" class="label">#4 · PLATFORM PROOF ONLY</text><text x="16" y="61" class="box-title">Exclusive APFS move</text><text x="16" y="91" class="body">Collisions + process-kill probes</text></g>
+<g transform="translate(421 552)"><rect width="332" height="124" class="box gate"/><text x="16" y="28" class="label">OPERATOR CONSENT NEEDED</text><text x="16" y="61" class="box-title">Real cross-volume proof</text><text x="16" y="91" class="body">Disposable APFS mount not run</text></g>
+<g transform="translate(798 552)"><rect width="332" height="124" class="box needed"/><text x="16" y="28" class="label">#4 · NOT BUILT</text><text x="16" y="61" class="box-title">Recovery lifecycle</text><text x="16" y="91" class="body">Store / journal / restore / purge</text></g>
+<g transform="translate(1175 552)"><rect width="381" height="124" class="box needed"/><text x="16" y="28" class="label">#4 · NOT BUILT</text><text x="16" y="61" class="box-title">Clients + lifecycle E2E</text><text x="16" y="91" class="body">Do not claim recoverable cleanup</text></g>
+<path d="M376 614H412M753 614H789M1130 614H1166" class="flow"/>
+<text x="44" y="731" class="heading">Distribution has separate acceptance gates</text>
+<g transform="translate(44 757)"><rect width="445" height="113" class="box local"/><text x="16" y="28" class="label">#8 · LOCAL / TESTED</text><text x="16" y="60" class="box-title">Two architectures + installer rehearsal</text><text x="16" y="91" class="body">Reproducible bytes; install/update/uninstall</text></g>
+<g transform="translate(546 757)"><rect width="445" height="113" class="box gate"/><text x="16" y="28" class="label">#8 · OPEN ACCEPTANCE</text><text x="16" y="60" class="box-title">Fresh arm64 + Intel Macs</text><text x="16" y="91" class="body">Runtime, Gatekeeper and signing decision</text></g>
+<g transform="translate(1048 757)"><rect width="508" height="113" class="box gate"/><text x="16" y="28" class="label">#8 · OWNER AUTHORIZATION REQUIRED</text><text x="16" y="58" class="box-title">Reviewed tag → gated draft</text><text x="16" y="82" class="box-title">→ verify → publish</text><text x="16" y="104" class="body">No tag, release, upload or signing identity created</text></g>
+<path d="M489 814H537M991 814H1039" class="flow"/>
+<rect x="44" y="910" width="1512" height="94" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+<text x="64" y="942" class="box-title">Hard boundary: all P0 acceptance is NOT complete</text>
+<text x="64" y="970" class="body">No personal cleanup in tests. No arbitrary deletion roots, silent consent, automatic purge, sudo or Gatekeeper bypass.</text>
+<text x="64" y="993" class="body">Review code and synthetic E2E evidence first; resolve recovery and release gates before closing their issues.</text>
+</svg>

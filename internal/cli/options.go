@@ -16,6 +16,7 @@ const (
 	CommandExplore      = "explore"
 	CommandRecommend    = "recommend"
 	CommandCapabilities = "capabilities"
+	CommandDiagnostics  = "diagnostics"
 	CommandClean        = "clean"
 	CommandAuto         = "auto"
 	CommandVersion      = "version"
@@ -38,8 +39,10 @@ type Options struct {
 	Profile       string
 	RuleIDs       []string
 	JSON          bool
+	Share         bool
 	Apply         bool
 	Yes           bool
+	Interactive   bool
 	Scope         string
 	MinSizeMiB    int64
 	OlderThanDays int
@@ -68,6 +71,8 @@ func Parse(args []string) (Options, error) {
 		return parseCommand(args, parseRecommend)
 	case CommandCapabilities:
 		return parseCommand(args, parseCapabilities)
+	case CommandDiagnostics:
+		return parseCommand(args, parseDiagnostics)
 	case CommandClean:
 		return parseCommand(args, parseClean)
 	case CommandAuto:
@@ -159,6 +164,20 @@ func parseCapabilities(args []string) (Options, error) {
 	return opts, nil
 }
 
+func parseDiagnostics(args []string) (Options, error) {
+	opts := Options{Command: CommandDiagnostics}
+	fs := newFlagSet(CommandDiagnostics)
+	fs.BoolVar(&opts.JSON, "json", false, "write machine-readable JSON")
+	fs.BoolVar(&opts.Share, "share", false, "explicitly request a shareable, path-free diagnostic summary")
+	if err := parse(fs, args); err != nil {
+		return Options{}, err
+	}
+	if !opts.Share {
+		return Options{}, errors.New("diagnostics requires --share; no scan or upload is performed")
+	}
+	return opts, nil
+}
+
 func parseExplore(args []string) (Options, error) {
 	opts := Options{Command: CommandExplore, Scope: "downloads", MinSizeMiB: 100, OlderThanDays: 180, Limit: 50}
 	fs := newFlagSet(CommandExplore)
@@ -186,6 +205,7 @@ func parseClean(args []string) (Options, error) {
 	}
 	var rawRules string
 	fs := newFlagSet(CommandClean)
+	fs.BoolVar(&opts.Interactive, "interactive", false, "review individual candidates in this process before returning a dry run or applying")
 	fs.StringVar(&opts.Profile, "profile", opts.Profile, "cleanup profile: safe, balanced, review, or all")
 	fs.StringVar(&rawRules, "rules", "", "comma-separated rule IDs (overrides profile selection)")
 	addExecutionFlags(fs, &opts)
@@ -287,12 +307,13 @@ func Usage() string {
 	return `Mac Cleanup Studio — preview-first macOS cleanup
 
 Usage:
+	mac-cleanup-studio diagnostics --share [--json]
   mac-cleanup-studio dashboard [--listen 127.0.0.1:0] [--no-open]
   mac-cleanup-studio capabilities [--json]
   mac-cleanup-studio explore [--scope downloads|documents|desktop|movies|music|pictures|applications|all] [--min-size-mib 100] [--older-than-days 180] [--limit 50] [--json]
   mac-cleanup-studio scan [--profile safe|balanced|review|all] [--rules id,...] [--json]
   mac-cleanup-studio recommend [--profile safe|balanced|review|all] [--rules id,...] [--json]
-  mac-cleanup-studio clean [--profile safe|balanced|review|all] [--rules id,...] [--apply --yes] [--json]
+  mac-cleanup-studio clean [--profile safe|balanced|review|all] [--rules id,...] [--interactive] [--apply --yes] [--json]
   mac-cleanup-studio auto [--apply --yes] [--json]
   mac-cleanup-studio version
 

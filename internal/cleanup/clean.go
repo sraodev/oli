@@ -11,29 +11,35 @@ import (
 	"time"
 )
 
-// Clean removes eligible candidates from selected rules in an existing Scan.
-// RuleIDs is intentionally required; an empty selection never means "all".
+// Clean removes selected eligible candidates from a single-use private scan.
+// An empty selection never means "all".
 func (e *Engine) Clean(ctx context.Context, scan *Scan, opts CleanOptions) (*CleanResult, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
 	if scan == nil || scan.plan == nil || scan.plan.engineToken != e.token {
 		return nil, ErrInvalidScan
 	}
-	selected, err := e.selectedRules(opts.RuleIDs, false)
+	scan.plan.mu.Lock()
+	selection, err := e.selectCandidates(scan.plan, opts)
 	if err != nil {
+		scan.plan.mu.Unlock()
 		return nil, err
 	}
-	selectedIDs := make([]string, 0, len(selected))
-	for _, compiled := range selected {
-		planned, ok := scan.plan.rules[compiled.rule.ID]
-		if !ok {
-			return nil, fmt.Errorf("cleanup: rule %q was not included in scan", compiled.rule.ID)
-		}
-		if planned.action == ActionScanOnly {
-			return nil, fmt.Errorf("%w: %s", ErrScanOnly, compiled.rule.ID)
-		}
-		selectedIDs = append(selectedIDs, compiled.rule.ID)
+	if err := ctx.Err(); err != nil {
+		scan.plan.mu.Unlock()
+		return &CleanResult{ScanID: scan.plan.scanID, StartedAt: time.Now(), CompletedAt: time.Now(), RuleIDs: selection.RuleIDs}, err
+	}
+	scan.plan.consumed = true
+	// Claim the plan before callbacks or filesystem work. A reentrant callback
+	// may inspect the consumed state without deadlocking this cleanup.
+	scan.plan.mu.Unlock()
+	selectedIDs := selection.RuleIDs
+	selectedCandidates := make(map[string]bool, len(selection.CandidateIDs))
+	for _, id := range selection.CandidateIDs {
+		selectedCandidates[id] = true
 	}
 
 	result := &CleanResult{
@@ -57,6 +63,9 @@ func (e *Engine) Clean(ctx context.Context, scan *Scan, opts CleanOptions) (*Cle
 		}
 		rule := scan.plan.rules[id]
 		for _, candidate := range rule.candidates {
+			if opts.CandidateIDs != nil && !selectedCandidates[candidate.summary.ID] {
+				continue
+			}
 			if !candidate.summary.Eligible {
 				outcome := outcomeFor(candidate, candidate.summary.EligibilityReason)
 				result.Skipped = append(result.Skipped, outcome)
@@ -120,6 +129,16 @@ func (e *Engine) Clean(ctx context.Context, scan *Scan, opts CleanOptions) (*Cle
 			result.CompletedAt = time.Now()
 			result.Freed = metricsForCandidates(removedCandidates, false)
 			return result, err
+		}
+		protection, err := e.loadProtection()
+		if err != nil {
+			result.CompletedAt = time.Now()
+			result.Freed = metricsForCandidates(removedCandidates, false)
+			return result, err
+		}
+		if protection.protects(planned.item) {
+			rejectCandidate(result, opts.Callback, planned.item, "protected by current exclusions")
+			continue
 		}
 		// Repeat the whole-candidate check immediately before its first
 		// mutation. This catches an unplanned child created after global

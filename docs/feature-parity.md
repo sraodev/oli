@@ -10,6 +10,11 @@ This inventory separates implemented functionality from planned work.
 Feature availability does not imply security protection or guaranteed
 cleanup effectiveness.
 
+For P0 issues #2–#8, see [the consolidated verification matrix](p0-verification.md).
+Per-item review, persistent exclusions, bounded/reporting contracts and local
+release rehearsal are implemented in this change. Recovery remains a platform
+spike, not an available restore feature; public release acceptance is open.
+
 | Feature family | Current implementation | Remaining work |
 | --- | --- | --- |
 | Combined care scan | Cache scan, explanations, risk/age selection, explicit apply | A unified report across independent inspection modules; no all-purpose health score |

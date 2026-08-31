@@ -132,7 +132,7 @@
           </div>
           <div class="metric-pair">
             <div><span>Selected now</span><strong id="selected-total">0 B</strong></div>
-            <div><span>Rules selected</span><strong id="selected-count">0</strong></div>
+            <div><span>Candidates selected</span><strong id="selected-count">0</strong></div>
           </div>
           <p class="opportunity-note" id="opportunity-note">Nothing is removed until you review the plan and type DELETE.</p>
         </article>
@@ -252,6 +252,7 @@
 
         <div class="issue-list" id="scan-issues" aria-live="polite"></div>
         <div class="category-grid" id="category-grid"></div>
+        <p id="selection-status" class="atlas-status" role="status"></p>
       </section>
 
       <section class="activity-section" id="activity" aria-labelledby="activity-title" hidden>
@@ -279,12 +280,12 @@
     <div class="dock-summary">
       <span class="dock-icon" aria-hidden="true"></span>
       <div><span id="dock-title">Selected cleanup</span><strong id="dock-total">0 B</strong></div>
-      <small id="dock-rules">0 rules</small>
+      <small id="dock-rules">0 candidates</small>
     </div>
     <label class="confirmation-field">
       <span>Type <strong>DELETE</strong> to confirm</span>
       <input id="confirmation-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE" aria-describedby="confirmation-help">
-      <small id="confirmation-help">Only the selected rules from this scan will run.</small>
+      <small id="confirmation-help">Only selected candidates from this scan will be removed.</small>
     </label>
     <button class="danger-button" id="clean-button" type="button" disabled>
       <span class="trash-icon" aria-hidden="true"></span>
@@ -296,7 +297,7 @@
     <div class="outcome-mark" aria-hidden="true">✓</div>
     <p class="eyebrow">CLEANUP COMPLETE</p>
     <h2 id="outcome-title">Your Mac has more breathing room.</h2>
-    <div class="outcome-primary"><strong id="measured-total">0 B</strong><span>measured space reclaimed</span></div>
+    <div class="outcome-primary"><strong id="measured-total">0 B</strong><span>observed free-space change, not attributed savings</span></div>
     <div class="outcome-grid">
       <div><span>Selected estimate</span><strong id="outcome-selected">0 B</strong></div>
       <div><span>Candidates removed</span><strong id="outcome-items">0</strong></div>

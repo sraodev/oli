@@ -59,6 +59,22 @@ func (s *DashboardService) Explore(ctx context.Context, scope string) (*cleanup.
 	return s.engine.Explore(ctx, cleanup.ExploreOptions{Scope: scope})
 }
 
+func (s *DashboardService) Preview(ctx context.Context, request dashboard.SelectionRequest) (*cleanup.Selection, error) {
+	release, err := s.beginOperation()
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	scan, ok := s.lookup(request.ScanID)
+	if !ok {
+		return nil, cleanup.ErrInvalidScan
+	}
+	return s.engine.PreviewSelection(scan, cleanup.CleanOptions{CandidateIDs: request.CandidateIDs})
+}
+
 func (s *DashboardService) Scan(ctx context.Context, request dashboard.ScanRequest, send func(dashboard.ScanEvent) error) error {
 	release, err := s.beginOperation()
 	if err != nil {
@@ -101,12 +117,14 @@ func (s *DashboardService) Scan(ctx context.Context, request dashboard.ScanReque
 		case cleanup.EventWarning:
 			message := event.Message
 			ruleID := event.RuleID
+			code := "scan_incomplete"
 			if event.Warning != nil {
+				code = event.Warning.Code
 				message = event.Warning.Message
 				ruleID = event.Warning.RuleID
 			}
 			sendErr = send(dashboard.ScanEvent{Type: "scan.issue", Issue: &dashboard.ScanIssue{
-				RuleID: ruleID, Message: message, Recoverable: true,
+				RuleID: ruleID, Message: message, Code: code, Recoverable: true,
 			}})
 		case cleanup.EventRuleCompleted:
 			if event.Rule == nil {
@@ -137,11 +155,16 @@ func (s *DashboardService) Scan(ctx context.Context, request dashboard.ScanReque
 	}
 	scan.ReleaseScanOnlyManifests()
 	s.remember(scan)
+	// Category totals are not additive when hard links cross rule boundaries.
+	filesScanned = nonnegative(scan.Detected.Files)
+	bytesScanned = nonnegative(scan.Detected.AllocatedBytes)
+	reclaimable = nonnegative(scan.Eligible.AllocatedBytes)
 	if err := send(dashboard.ScanEvent{
 		Type: "scan.complete", ScanID: scan.ID,
 		FilesScanned: filesScanned, BytesScanned: bytesScanned, ReclaimableBytes: reclaimable,
 		Progress: 1,
 		Summary: &dashboard.ScanSummary{
+			Partial: scan.Partial, WarningsOmitted: scan.WarningsOmitted, LogicalBytes: nonnegative(scan.Detected.LogicalBytes),
 			ScanID: scan.ID, FilesScanned: filesScanned, BytesScanned: bytesScanned,
 			ReclaimableBytes: reclaimable, DurationMillis: time.Since(started).Milliseconds(),
 		},
@@ -164,13 +187,18 @@ func (s *DashboardService) Clean(ctx context.Context, request dashboard.CleanReq
 
 	scan, ok := s.lookup(request.ScanID)
 	if !ok {
-		return errors.New("app: scan is unknown, expired, or already used")
+		return cleanup.ErrInvalidScan
 	}
-	selected, err := ValidateRuleIDs(s.engine.Rules(), request.RuleIDs)
+	options := cleanup.CleanOptions{RuleIDs: request.RuleIDs, CandidateIDs: request.CandidateIDs}
+	selection, err := s.engine.PreviewSelection(scan, options)
 	if err != nil {
 		return err
 	}
-	selectedBytes, candidates := selectedPlan(scan, selected)
+	selectedBytes := nonnegative(selection.Metrics.AllocatedBytes)
+	candidates := make(map[string]cleanup.Candidate, len(selection.Candidates))
+	for _, candidate := range selection.Candidates {
+		candidates[candidate.ID] = candidate
+	}
 	if len(candidates) == 0 {
 		return errors.New("app: selected rules have no eligible candidates")
 	}
@@ -186,7 +214,7 @@ func (s *DashboardService) Clean(ctx context.Context, request dashboard.CleanReq
 	}
 	consumed, ok := s.take(request.ScanID)
 	if !ok || consumed != scan {
-		return errors.New("app: scan expired before cleanup could start")
+		return cleanup.ErrInvalidScan
 	}
 
 	started := time.Now()
@@ -204,7 +232,7 @@ func (s *DashboardService) Clean(ctx context.Context, request dashboard.CleanReq
 			finished++
 			removedItems++
 			if known {
-				removedBytes += nonnegative(candidate.Metrics.AllocatedBytes)
+				removedBytes = min(selectedBytes, removedBytes+nonnegative(candidate.Metrics.AllocatedBytes))
 			}
 			sendErr = send(dashboard.CleanEvent{
 				Type: "clean.progress", RuleID: event.RuleID,
@@ -226,7 +254,7 @@ func (s *DashboardService) Clean(ctx context.Context, request dashboard.CleanReq
 				Type: "clean.issue", RuleID: event.RuleID,
 				Progress:     progress64(finished, uint64(len(candidates))),
 				RemovedItems: removedItems, RemovedBytes: removedBytes,
-				Issue: &dashboard.CleanIssue{RuleID: event.RuleID, Message: message},
+				Issue: &dashboard.CleanIssue{RuleID: event.RuleID, Message: message, Code: "candidate_skipped"},
 			})
 		case cleanup.EventCandidateFailed:
 			if !known {
@@ -244,7 +272,7 @@ func (s *DashboardService) Clean(ctx context.Context, request dashboard.CleanReq
 				Type: "clean.issue", RuleID: event.RuleID,
 				Progress:     progress64(finished, uint64(len(candidates))),
 				RemovedItems: removedItems, RemovedBytes: removedBytes,
-				Issue: &dashboard.CleanIssue{RuleID: event.RuleID, Message: message},
+				Issue: &dashboard.CleanIssue{RuleID: event.RuleID, Message: message, Code: "candidate_failed"},
 			})
 		}
 		if sendErr != nil {
@@ -252,7 +280,8 @@ func (s *DashboardService) Clean(ctx context.Context, request dashboard.CleanReq
 		}
 	}
 
-	result, cleanErr := s.engine.Clean(ctx, scan, cleanup.CleanOptions{RuleIDs: selected, Callback: callback})
+	options.Callback = callback
+	result, cleanErr := s.engine.Clean(ctx, scan, options)
 	if sendErr != nil {
 		return sendErr
 	}
@@ -262,11 +291,13 @@ func (s *DashboardService) Clean(ctx context.Context, request dashboard.CleanReq
 			if afterErr != nil {
 				after = before
 			}
+			summary := cleanSummary(result, selectedBytes, before, after, time.Since(started), true)
+			summary.ObservationAvailable = afterErr == nil
 			if err := send(dashboard.CleanEvent{
 				Type: "clean.partial", Message: "Cleanup stopped after making partial progress.",
 				Progress:     progress64(uint64(len(result.Removed)+len(result.Rejected)+len(result.Failures)), uint64(len(candidates))),
 				RemovedItems: uint64(len(result.Removed)), RemovedBytes: nonnegative(result.Freed.AllocatedBytes),
-				Summary: cleanSummary(result, selectedBytes, before, after, time.Since(started), true),
+				Summary: summary,
 			}); err != nil {
 				return err
 			}
@@ -275,6 +306,11 @@ func (s *DashboardService) Clean(ctx context.Context, request dashboard.CleanReq
 	}
 	after, err := cleanup.VolumeStats(s.home)
 	if err != nil {
+		summary := cleanSummary(result, selectedBytes, before, before, time.Since(started), true)
+		summary.ObservationAvailable = false
+		if sendErr := send(dashboard.CleanEvent{Type: "clean.partial", Message: "Cleanup ran, but the final free-space reading failed.", Summary: summary}); sendErr != nil {
+			return sendErr
+		}
 		return fmt.Errorf("app: read disk usage after cleanup: %w", err)
 	}
 	removedItems = uint64(len(result.Removed))
@@ -290,7 +326,7 @@ func (s *DashboardService) beginOperation() (func(), error) {
 	case s.operation <- struct{}{}:
 		return func() { <-s.operation }, nil
 	default:
-		return nil, errors.New("app: another scan or cleanup is already running")
+		return nil, cleanup.ErrBusy
 	}
 }
 
@@ -336,14 +372,16 @@ func (s *DashboardService) discard(id string) {
 
 func cleanSummary(result *cleanup.CleanResult, selectedBytes uint64, before, after cleanup.VolumeInfo, duration time.Duration, partial bool) *dashboard.CleanSummary {
 	return &dashboard.CleanSummary{
-		SelectedBytes: selectedBytes, RemovedBytes: nonnegative(result.Freed.AllocatedBytes),
+		ObservedFreeSpaceChangeBytes: after.AvailableBytes - before.AvailableBytes,
+		ObservationAvailable:         true,
+		SelectedBytes:                selectedBytes, RemovedBytes: nonnegative(result.Freed.AllocatedBytes),
 		MeasuredReclaimedBytes: positiveDifference(after.AvailableBytes, before.AvailableBytes),
 		RemovedItems:           uint64(len(result.Removed)),
 		FailedItems:            uint64(len(result.Failures) + len(result.Rejected)),
 		BeforeFreeBytes:        nonnegative(before.AvailableBytes),
 		AfterFreeBytes:         nonnegative(after.AvailableBytes),
 		DurationMillis:         duration.Milliseconds(),
-		Partial:                partial,
+		Partial:                partial || len(result.Failures)+len(result.Rejected) > 0,
 	}
 }
 
@@ -354,10 +392,8 @@ func categoryView(rule cleanup.RuleScan) dashboard.ScanCategory {
 	})
 	items := make([]dashboard.ScanItem, 0, len(candidates))
 	for _, candidate := range candidates {
-		if rule.Rule.Action == cleanup.ActionClean && !candidate.Eligible {
-			continue
-		}
 		items = append(items, dashboard.ScanItem{
+			CandidateID: candidate.ID, Eligible: candidate.Eligible, Reason: candidate.EligibilityReason,
 			Name: candidate.DisplayPath, Location: candidate.RootDisplayPath,
 			SizeBytes:   nonnegative(candidate.Metrics.AllocatedBytes),
 			ModifiedAge: modifiedAge(candidate.LatestModified),
@@ -372,28 +408,6 @@ func categoryView(rule cleanup.RuleScan) dashboard.ScanCategory {
 		SelectedByDefault: rule.Rule.Default && rule.Rule.Action == cleanup.ActionClean,
 		LargestItems:      items,
 	}
-}
-
-func selectedPlan(scan *cleanup.Scan, ruleIDs []string) (uint64, map[string]cleanup.Candidate) {
-	wanted := make(map[string]struct{}, len(ruleIDs))
-	for _, id := range ruleIDs {
-		wanted[id] = struct{}{}
-	}
-	items := make(map[string]cleanup.Candidate)
-	var bytes uint64
-	for _, rule := range scan.Rules {
-		if _, ok := wanted[rule.Rule.ID]; !ok {
-			continue
-		}
-		bytes += nonnegative(rule.Eligible.AllocatedBytes)
-		for _, candidate := range rule.Candidates {
-			if !candidate.Eligible {
-				continue
-			}
-			items[candidate.ID] = candidate
-		}
-	}
-	return bytes, items
 }
 
 func ruleName(rules []cleanup.RuleInfo, id string) string {

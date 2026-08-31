@@ -10,7 +10,7 @@ before anything is deleted.
 > paths before using CLI `--apply --yes` or typing `DELETE` in the dashboard.
 
 Mac Cleanup Studio is an early-stage, macOS-only project. It builds as one
-standard-library Go binary, operates only within the current user's home, and
+Go binary, operates only within the current user's home, and
 does not ask for `sudo`.
 
 ## Why this project
@@ -22,7 +22,7 @@ Mac Cleanup Studio keeps three boundaries visible:
    reclaimable estimate.
 2. **Review** shows the rules, paths, item counts, ages, errors, and estimated
    reclaimable space. A clean command without `--apply` is also a dry run.
-3. **Clean** permanently deletes only the selected rules from a fresh,
+3. **Clean** permanently deletes only the selected candidates or rules from a fresh,
    revalidated scan. The CLI requires both `--apply` and `--yes`; the dashboard
    requires typing `DELETE` for the completed scan.
 
@@ -88,8 +88,25 @@ number of bytes macOS will make available.
 APFS compression, copy-on-write clones, sparse files, hard links, snapshots,
 purgeable space, and files changing between scan and deletion can all make the
 physical result different. After an applied cleanup, treat the measured change
-in free space as the result, while remembering that macOS and snapshots can
-delay visible reclamation.
+in free space as an observation, not savings attributable to this tool: other
+processes may write concurrently and snapshots may delay visible reclamation.
+A negative change is retained, not rounded up to zero. Incomplete scans are
+labelled and their totals cover measured entries only. Display units use
+powers of 1024 (KiB, MiB, GiB); JSON fields use integer bytes.
+
+## Persistent protection
+
+Exclusions can only narrow the compiled cleanup rules. Create
+`~/Library/Application Support/Mac Cleanup Studio/exclusions.json` with:
+
+```json
+{"version":1,"rules":["trash"],"paths":["Library/Caches/app-to-keep"]}
+```
+
+Protected candidates remain visible but cannot be selected for cleanup.
+Protection is reloaded before each candidate's mutation; malformed/unreadable
+configuration blocks scanning and cleanup. No config is created automatically.
+See [matching rules and safety limits](docs/protection-and-reports.md).
 
 ## Build from source
 
@@ -140,23 +157,19 @@ implemented and what remains on the Mac-maintenance roadmap.
 
 ## Release binaries
 
-Tagged releases publish separate macOS binaries for Apple Silicon (`arm64`)
-and Intel (`amd64`) as compressed archives, together with `SHA256SUMS`.
-Download the archive for your Mac and verify it before extracting:
+The release pipeline prepares deterministic Apple Silicon (`arm64`) and Intel
+(`amd64`) archives, provenance, `SHA256SUMS`, and an offline per-user installer.
+An annotated tag alone does **not** publish. Publication requires a manual
+dispatch for an exact reviewed commit and a protected environment approval.
 
-```sh
-shasum -a 256 -c SHA256SUMS
-tar -xzf mac-cleanup-studio-vX.Y.Z-darwin-arm64.tar.gz
-./mac-cleanup-studio-vX.Y.Z-darwin-arm64/mac-cleanup-studio version
-```
+No release is promised by the source tree. Local rehearsals are explicitly
+marked snapshots and rejected by the production verifier. Builds currently
+have no Developer ID signature or Apple notarization; never bypass macOS
+security warnings. Fresh-machine acceptance and first publication remain
+separate gates. See [release and installation instructions](docs/releases.md).
 
-Release binaries embed their version, commit, and build date. Early community
-builds are not Apple-notarized; users who require a signed/notarized binary
-should build from reviewed source until a project signing identity and
-notarization process are established. Do not bypass macOS security warnings.
-
-Maintainers create a release by pushing an annotated `vX.Y.Z` tag. CI reruns
-the race tests before publishing either architecture.
+The [P0 verification report](docs/p0-verification.md) distinguishes implemented
+code from recovery/platform and release gates that are still open.
 
 ## Command flow
 

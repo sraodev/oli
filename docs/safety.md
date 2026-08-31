@@ -1,5 +1,12 @@
 # Safety model
 
+Persistent exclusions and measurement semantics are specified in
+[Protection and explainable reports](protection-and-reports.md). Invalid policy
+blocks new scans and each candidate's mutation boundary. Incomplete scans are
+explicitly labelled; available-space change is an observation, not a promise.
+Recovery code remains an unexposed platform spike; see
+[P0 acceptance gates](p0-verification.md) before claiming restore support.
+
 ## Read-only personal-folder exploration
 
 Storage Atlas (`explore`) is separate from the cleanup engine's frozen scan
@@ -36,8 +43,15 @@ another prompt. JSON mode includes the fresh scan and result in one final JSON
 record. An earlier dry run is a separate scan and cannot authorize or freeze a
 later invocation.
 
-The dashboard has a separate confirmation boundary: it accepts only rule IDs
-from a completed scan and requires the exact word `DELETE` before cleanup.
+`clean --interactive` adds a same-process per-item review and exact `DELETE`
+prompt before an applied cleanup. Its prompts use stderr even with JSON output.
+
+The dashboard selects only eligible candidate IDs from its current completed
+scan and requires the exact word `DELETE` before cleanup. Its API also retains
+legacy bulk rule-ID selection; the two selection modes cannot be combined.
+Empty, unknown, stale, foreign-scan and already-consumed selections cannot
+authorize deletion. Paths and report metadata are never accepted as authority.
+Preview totals resolve against the private plan, not the browser's byte sums.
 
 ## Filesystem boundary
 
@@ -82,7 +96,9 @@ cleanable rules and their eligible candidates.
    allocated-block estimates. Hard-linked files are counted once. No deletion
    occurs.
 2. **Review:** present each rule's action, risk, cutoff, item count, largest
-   entries, paths, and scan errors. The selected total remains an estimate.
+   entries, paths, and scan errors. Select individual eligible candidates;
+   unselected candidates remain untouched. A directory selection includes all
+   its scanned contents. The selected total remains an estimate.
 3. **Clean:** require explicit apply confirmation, reject non-cleanable
    findings, attempt each selected deletion, and report errors instead of
    escalating privileges. The applied run reports the measured result.
@@ -98,7 +114,9 @@ not follow symlinks encountered while scanning, and rejects traversal across a
 filesystem boundary.
 
 A scan freezes a recursive manifest for each direct-child candidate. Before
-deletion, the engine revalidates root and entry identity, metadata, and exact
+its first mutation attempt, a cleanup consumes that plan; partial outcomes
+require a fresh scan before retrying. Candidate IDs are specific to one scan.
+Before deletion, the engine revalidates root and entry identity, metadata, and exact
 directory membership. A changed candidate is rejected instead of cleaned.
 Eligible entries are removed deepest-first through traversal-resistant
 `os.Root` directory handles. Each final name is removed relative to a verified

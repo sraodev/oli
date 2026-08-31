@@ -42,6 +42,9 @@ func TestParseCleanRequiresBothExecutionFlags(t *testing.T) {
 		{"clean", "--yes"},
 		{"auto", "--apply"},
 		{"auto", "--yes"},
+		{"clean", "--interactive", "--apply"},
+		{"clean", "--interactive", "--yes"},
+		{"auto", "--interactive"},
 	} {
 		if _, err := Parse(args); err == nil {
 			t.Fatalf("Parse(%q) succeeded, want error", args)
