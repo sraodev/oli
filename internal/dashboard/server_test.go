@@ -54,6 +54,69 @@ func TestExploreEndpointIsAuthenticatedAndPathFree(t *testing.T) {
 	}
 }
 
+func TestExploreEndpointPreservesPartialReportAndSetsDeadline(t *testing.T) {
+	service := &fakeService{exploreFn: func(ctx context.Context, scope string) (*cleanup.Exploration, error) {
+		deadline, ok := ctx.Deadline()
+		if remaining := time.Until(deadline); !ok || remaining <= 0 || remaining > 2*time.Minute {
+			t.Fatalf("deadline=%v present=%v", deadline, ok)
+		}
+		return &cleanup.Exploration{Action: cleanup.ActionScanOnly, Scope: scope, Partial: true,
+			Warnings: []cleanup.Warning{{Code: "entry_limit", Message: "Entry limit reached."}}}, nil
+	}}
+	response := httptest.NewRecorder()
+	newTestHandler(t, service).ServeHTTP(response, localJSONRequest(http.MethodPost, "/api/explore", `{"scope":"downloads"}`))
+	var report cleanup.Exploration
+	if err := json.Unmarshal(response.Body.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if response.Code != http.StatusOK || report.Action != cleanup.ActionScanOnly || !report.Partial || len(report.Warnings) != 1 {
+		t.Fatalf("response=%d %s", response.Code, response.Body.String())
+	}
+}
+
+func TestExploreEndpointCancelsWithRequestOrServer(t *testing.T) {
+	for _, source := range []string{"request", "server"} {
+		t.Run(source, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			started := make(chan struct{})
+			service := &fakeService{exploreFn: func(ctx context.Context, _ string) (*cleanup.Exploration, error) {
+				close(started)
+				<-ctx.Done()
+				return nil, ctx.Err()
+			}}
+			config := Config{Token: testToken, Service: service}
+			request := localJSONRequest(http.MethodPost, "/api/explore", `{"scope":"downloads"}`)
+			if source == "server" {
+				config.Context = ctx
+			} else {
+				request = request.WithContext(ctx)
+			}
+			handler, err := Handler(config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			response := httptest.NewRecorder()
+			done := make(chan struct{})
+			go func() { defer close(done); handler.ServeHTTP(response, request) }()
+			select {
+			case <-started:
+			case <-time.After(time.Second):
+				t.Fatal("exploration did not start")
+			}
+			cancel()
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+				t.Fatal("exploration did not cancel")
+			}
+			if response.Code == http.StatusOK || strings.Contains(response.Body.String(), `"action"`) {
+				t.Fatalf("cancellation returned a report: %s", response.Body.String())
+			}
+		})
+	}
+}
+
 func (f *fakeService) Disk(ctx context.Context) (DiskUsage, error) {
 	if f.diskFn != nil {
 		return f.diskFn(ctx)
