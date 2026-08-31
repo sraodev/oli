@@ -12,6 +12,42 @@ import (
 	"github.com/sraodev/mac-cleanup-studio/internal/dashboard"
 )
 
+func TestDashboardServiceExploreIsSerializedAndCreatesNoCleanupPlan(t *testing.T) {
+	home := t.TempDir()
+	writeFixture(t, filepath.Join(home, "Downloads", "keep"), "keep")
+	engine, err := cleanup.NewDefault(home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	service, err := NewDashboardService(engine, home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	release, err := service.beginOperation()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.Explore(context.Background(), "downloads"); err == nil {
+		t.Fatal("explore accepted an overlapping operation")
+	}
+	release()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := service.Explore(ctx, "downloads"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("error=%v", err)
+	}
+	report, err := service.Explore(context.Background(), "downloads")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Action != cleanup.ActionScanOnly || report.Total.UniqueFiles != 1 || service.current != nil {
+		t.Fatalf("report=%+v current=%+v", report, service.current)
+	}
+	if data, err := os.ReadFile(filepath.Join(home, "Downloads", "keep")); err != nil || string(data) != "keep" {
+		t.Fatalf("fixture changed: %q %v", data, err)
+	}
+}
+
 func TestDashboardServiceScanAndSingleUseClean(t *testing.T) {
 	home := t.TempDir()
 	root := filepath.Join(home, "cache")

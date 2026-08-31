@@ -6,10 +6,110 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestExploreFixedScopesAndThresholdBoundaries(t *testing.T) {
+	home := t.TempDir()
+	now := time.Date(2026, 8, 31, 12, 0, 0, 0, time.UTC)
+	cutoff := now.AddDate(0, 0, -180)
+	for _, file := range []struct {
+		name     string
+		size     int
+		modified time.Time
+	}{
+		{"at-boundary", 100, cutoff},
+		{"too-small", 99, cutoff},
+		{"too-recent", 101, cutoff.Add(time.Second)},
+	} {
+		path := filepath.Join(home, "Downloads", file.name)
+		mustWrite(t, path, strings.Repeat("x", file.size))
+		if err := os.Chtimes(path, file.modified, file.modified); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mustWrite(t, filepath.Join(home, "Documents", "keep"), "keep")
+	mustWrite(t, filepath.Join(home, "outside-scopes", "keep"), "not in report")
+	engine, err := NewDefault(home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, err := engine.Explore(context.Background(), ExploreOptions{Now: now, MinSizeBytes: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Partial || report.Total.LogicalBytes != 300 || len(report.Scopes) != 1 || report.Scopes[0].ID != "downloads" {
+		t.Fatalf("scope isolation failed: %+v", report)
+	}
+	wantLarge := []string{"~/Downloads/too-recent", "~/Downloads/at-boundary"}
+	wantOld := []string{"~/Downloads/at-boundary", "~/Downloads/too-small"}
+	for _, list := range []struct {
+		items []ExploreItem
+		want  []string
+	}{{report.LargeFiles, wantLarge}, {report.OldFiles, wantOld}} {
+		var got []string
+		for _, item := range list.items {
+			got = append(got, item.DisplayPath)
+		}
+		if !reflect.DeepEqual(got, list.want) {
+			t.Fatalf("paths=%v want=%v", got, list.want)
+		}
+	}
+	all, err := engine.Explore(context.Background(), ExploreOptions{Scope: "all"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, scope := range all.Scopes {
+		ids = append(ids, scope.ID)
+	}
+	wantIDs := []string{"downloads", "documents", "desktop", "movies", "music", "pictures", "applications"}
+	if all.Partial || all.Total.LogicalBytes != 304 || !reflect.DeepEqual(ids, wantIDs) {
+		t.Fatalf("all scopes=%v total=%+v partial=%v", ids, all.Total, all.Partial)
+	}
+	if all.MinSizeBytes != 100<<20 || all.OlderDays != 180 || all.Limit != 50 {
+		t.Fatalf("defaults=%+v", all)
+	}
+}
+
+func TestExploreDepthDeviceAndWarningBounds(t *testing.T) {
+	home := t.TempDir()
+	mustWrite(t, filepath.Join(home, "Downloads", "keep"), "keep")
+	root, err := os.OpenRoot(home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
+	_, fp, err := inspectInRoot(root, "Downloads")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		name   string
+		depth  int
+		device uint64
+	}{
+		{"depth", 65, fp.Device}, {"device", 0, fp.Device + 1},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			walker := explorer{ctx: context.Background(), report: &Exploration{}, device: test.device}
+			metrics, err := walker.directory(root, "Downloads", "~/Downloads", fp, test.depth)
+			if err != nil || metrics.Files != 0 || !walker.report.Partial || len(walker.report.Warnings) != 1 {
+				t.Fatalf("metrics=%+v report=%+v err=%v", metrics, walker.report, err)
+			}
+		})
+	}
+	walker := explorer{report: &Exploration{}}
+	for i := 0; i < 101; i++ {
+		walker.warn("~/Downloads", "test", "test warning")
+	}
+	if !walker.report.Partial || len(walker.report.Warnings) != 100 {
+		t.Fatalf("warnings=%+v", walker.report)
+	}
+}
 
 func TestExploreIsReadOnlyCountsHardlinksOnceAndRanksFiles(t *testing.T) {
 	home := t.TempDir()
