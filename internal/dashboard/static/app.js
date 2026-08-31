@@ -2,6 +2,18 @@
   "use strict";
 
   const elements = {
+    atlasButton: document.querySelector("#atlas-button"),
+    atlasScope: document.querySelector("#atlas-scope"),
+    atlasStatus: document.querySelector("#atlas-status"),
+    atlasResults: document.querySelector("#atlas-results"),
+    atlasProgress: document.querySelector("#atlas-progress"),
+    atlasAllocated: document.querySelector("#atlas-allocated"),
+    atlasLogical: document.querySelector("#atlas-logical"),
+    atlasCount: document.querySelector("#atlas-count"),
+    atlasScopes: document.querySelector("#atlas-scopes"),
+    atlasItems: document.querySelector("#atlas-items"),
+    atlasListNote: document.querySelector("#atlas-list-note"),
+    atlasWarnings: document.querySelector("#atlas-warnings"),
     activity: document.querySelector("#activity"),
     activityLog: document.querySelector("#activity-log"),
     activityTotal: document.querySelector("#activity-total"),
@@ -57,6 +69,10 @@
   };
 
   const state = {
+    exploring: false,
+    exploreAbortController: null,
+    exploration: null,
+    atlasList: "folders",
     categories: new Map(),
     cleaning: false,
     scanAbortController: null,
@@ -163,7 +179,7 @@
       }
       const disk = await response.json();
       renderDisk(disk);
-      setConnection("Protected · Ready", "ready");
+      setConnection("Local · Ready", "ready");
       elements.authNotice.hidden = true;
     } catch (error) {
       setConnection("Connection issue", "error");
@@ -199,12 +215,13 @@
       state.scanAbortController?.abort();
       return;
     }
-    if (state.cleaning || !state.token) {
+    if (state.cleaning || state.exploring || !state.token) {
       return;
     }
 
     resetScanResults();
     state.scanning = true;
+    elements.atlasButton.disabled = true;
     state.scanAbortController = new AbortController();
     elements.scanProgressPanel.hidden = false;
     elements.scanButton.querySelector("span:last-child").textContent = "Stop scan";
@@ -237,6 +254,7 @@
       }
     } finally {
       state.scanning = false;
+      elements.atlasButton.disabled = !state.token;
       state.scanAbortController = null;
       elements.scanButton.querySelector("span:last-child").textContent = "Scan this Mac";
       elements.scanProgressTitle.textContent = state.scanID ? "Scan complete" : "Scan stopped";
@@ -427,11 +445,12 @@
   }
 
   async function startClean() {
-    if (state.cleaning || !state.scanID || !state.selected.size || elements.confirmationInput.value !== "DELETE") {
+    if (state.cleaning || state.exploring || state.scanning || !state.scanID || !state.selected.size || elements.confirmationInput.value !== "DELETE") {
       return;
     }
     const selectedRules = [...state.selected];
     state.cleaning = true;
+    elements.atlasButton.disabled = true;
     elements.cleanupDock.hidden = true;
     elements.activity.hidden = false;
     elements.activityLog.replaceChildren();
@@ -459,6 +478,7 @@
       showToast(error.message || "Cleanup could not finish.");
     } finally {
       state.cleaning = false;
+      elements.atlasButton.disabled = !state.token;
       elements.scanButton.disabled = false;
       setProfileDisabled(false);
       resetConfirmation();
@@ -599,7 +619,7 @@
   function updateCleanButton() {
     const valid = elements.confirmationInput.value === "DELETE";
     elements.confirmationInput.classList.toggle("is-valid", valid);
-    elements.cleanButton.disabled = !valid || !state.scanID || state.selected.size === 0 || state.cleaning;
+    elements.cleanButton.disabled = !valid || !state.scanID || state.selected.size === 0 || state.cleaning || state.scanning || state.exploring;
   }
 
   function setConnection(label, kind) {
@@ -609,6 +629,7 @@
   }
 
   function showLockedState() {
+    elements.atlasButton.disabled = true;
     elements.authNotice.hidden = false;
     elements.scanButton.disabled = true;
     elements.refreshDisk.disabled = true;
@@ -744,9 +765,131 @@
     updateSelection();
   });
 
+  async function startExplore() {
+    if (state.exploring) {
+      state.exploreAbortController?.abort();
+      return;
+    }
+    if (state.scanning || state.cleaning || !state.token) return;
+    state.exploring = true;
+    state.exploreAbortController = new AbortController();
+    state.exploration = null;
+    elements.atlasResults.hidden = true;
+    elements.atlasProgress.hidden = false;
+    elements.atlasButton.textContent = "Stop exploring";
+    elements.atlasScope.disabled = true;
+    elements.scanButton.disabled = true;
+    elements.atlasStatus.textContent = "Inspecting metadata… Up to 200,000 entries, with a two-minute time limit.";
+    updateCleanButton();
+    try {
+      const response = await api("/api/explore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope: elements.atlasScope.value }),
+        signal: state.exploreAbortController.signal,
+      });
+      if (!response.ok) throw new Error(await responseError(response));
+      state.exploration = await response.json();
+      renderExploration();
+    } catch (error) {
+      elements.atlasStatus.textContent = error.name === "AbortError" ? "Exploration stopped. No files were changed." : (error.message || "Exploration could not finish.");
+    } finally {
+      state.exploring = false;
+      state.exploreAbortController = null;
+      elements.atlasProgress.hidden = true;
+      elements.atlasButton.textContent = "Explore storage";
+      elements.atlasScope.disabled = false;
+      elements.scanButton.disabled = !state.token;
+      updateCleanButton();
+    }
+  }
+
+  function renderExploration() {
+    const report = state.exploration;
+    elements.atlasResults.hidden = false;
+    elements.atlasStatus.textContent = `${report.partial ? "Partial report" : "Inspection complete"} · ${formatCount(report.entries_inspected)} entries · ${formatCount(report.total.symlinks)} symlinks skipped. No files changed.`;
+    elements.atlasAllocated.textContent = formatBytes(report.total.allocated_bytes);
+    elements.atlasLogical.textContent = formatBytes(report.total.logical_bytes);
+    elements.atlasCount.textContent = formatCount(report.total.unique_files);
+    elements.atlasScopes.replaceChildren();
+    for (const scope of report.scopes) {
+      const card = document.createElement("div");
+      card.className = "atlas-scope-card";
+      const name = document.createElement("span");
+      name.textContent = scope.display_path;
+      const size = document.createElement("strong");
+      size.textContent = formatBytes(scope.metrics.allocated_bytes);
+      const meter = document.createElement("progress");
+      meter.max = Math.max(1, report.total.allocated_bytes);
+      meter.value = scope.metrics.allocated_bytes;
+      meter.setAttribute("aria-label", `${scope.name}: ${size.textContent} allocated`);
+      card.append(name, size, meter);
+      elements.atlasScopes.append(card);
+    }
+    elements.atlasWarnings.replaceChildren();
+    for (const warning of report.warnings) {
+      const row = document.createElement("div");
+      row.className = "scan-issue";
+      row.textContent = `${warning.display_path}: ${warning.message}`;
+      elements.atlasWarnings.append(row);
+    }
+    renderAtlasList();
+  }
+
+  function renderAtlasList() {
+    const report = state.exploration;
+    if (!report) return;
+    const notes = {
+      folders: "Top-level folders, ranked by logical size. A hard-linked file is counted only at its first encountered location.",
+      large_files: `Files at least ${formatBytes(report.min_size_bytes)}, ranked by logical size.`,
+      old_files: `Files not modified for at least ${report.older_than_days} days, largest first. Age does not mean safe to delete.`,
+    };
+    elements.atlasListNote.textContent = `${notes[state.atlasList]} Showing up to ${report.limit}.`;
+    elements.atlasItems.replaceChildren();
+    for (const item of report[state.atlasList]) {
+      const row = document.createElement("tr");
+      for (const value of [item.display_path, formatBytes(item.metrics.allocated_bytes), formatBytes(item.metrics.logical_bytes), new Date(item.modified).toLocaleDateString()]) {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.append(cell);
+      }
+      elements.atlasItems.append(row);
+    }
+    if (!report[state.atlasList].length) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 4;
+      cell.textContent = "No matching items in this scope. Check any scan warnings below.";
+      row.append(cell);
+      elements.atlasItems.append(row);
+    }
+  }
+
+  elements.atlasButton.addEventListener("click", startExplore);
+  function updateNavigation() {
+    const section = window.location.hash || "#overview";
+    for (const link of document.querySelectorAll('.sidebar nav a')) {
+      const active = link.getAttribute("href") === section;
+      link.classList.toggle("is-active", active);
+      if (active) link.setAttribute("aria-current", "location");
+      else link.removeAttribute("aria-current");
+    }
+  }
+  window.addEventListener("hashchange", updateNavigation);
+  for (const button of document.querySelectorAll("[data-atlas-list]")) {
+    button.addEventListener("click", () => {
+      state.atlasList = button.dataset.atlasList;
+      for (const tab of document.querySelectorAll("[data-atlas-list]")) {
+        tab.setAttribute("aria-pressed", String(tab === button));
+      }
+      renderAtlasList();
+    });
+  }
+
   const hour = new Date().getHours();
   elements.dayPeriod.textContent = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
   state.token = readSessionToken();
+  updateNavigation();
   if (state.token) {
     void loadDisk();
   } else {

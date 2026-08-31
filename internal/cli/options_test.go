@@ -110,3 +110,19 @@ func TestParseHelp(t *testing.T) {
 		}
 	}
 }
+
+func TestExploreDefaultsAndUnsafeInputs(t *testing.T) {
+	opts, err := Parse([]string{"explore", "--json"})
+	if err != nil || opts.Scope != "downloads" || opts.MinSizeMiB != 100 || opts.Limit != 50 || !opts.JSON {
+		t.Fatalf("opts=%+v err=%v", opts, err)
+	}
+	for _, args := range [][]string{
+		{"explore", "--apply", "--yes"}, {"explore", "--scope", "../../"},
+		{"explore", "--limit", "201"}, {"explore", "--min-size-mib", "-1"},
+		{"explore", "--older-than-days", "0"}, {"explore", "/tmp"},
+	} {
+		if _, err := Parse(args); err == nil {
+			t.Fatalf("accepted %q", args)
+		}
+	}
+}

@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
 )
 
 const (
 	CommandDashboard    = "dashboard"
 	CommandScan         = "scan"
+	CommandExplore      = "explore"
 	CommandRecommend    = "recommend"
 	CommandCapabilities = "capabilities"
 	CommandClean        = "clean"
@@ -32,11 +35,15 @@ type Options struct {
 	Listen string
 	NoOpen bool
 
-	Profile string
-	RuleIDs []string
-	JSON    bool
-	Apply   bool
-	Yes     bool
+	Profile       string
+	RuleIDs       []string
+	JSON          bool
+	Apply         bool
+	Yes           bool
+	Scope         string
+	MinSizeMiB    int64
+	OlderThanDays int
+	Limit         int
 }
 
 // Parse validates args without writing usage text or exiting the process.
@@ -55,6 +62,8 @@ func Parse(args []string) (Options, error) {
 		return parseCommand(args, parseDashboard)
 	case CommandScan:
 		return parseCommand(args, parseScan)
+	case CommandExplore:
+		return parseCommand(args, parseExplore)
 	case CommandRecommend:
 		return parseCommand(args, parseRecommend)
 	case CommandCapabilities:
@@ -146,6 +155,26 @@ func parseCapabilities(args []string) (Options, error) {
 	fs.BoolVar(&opts.JSON, "json", false, "write machine-readable JSON")
 	if err := parse(fs, args); err != nil {
 		return Options{}, err
+	}
+	return opts, nil
+}
+
+func parseExplore(args []string) (Options, error) {
+	opts := Options{Command: CommandExplore, Scope: "downloads", MinSizeMiB: 100, OlderThanDays: 180, Limit: 50}
+	fs := newFlagSet(CommandExplore)
+	fs.StringVar(&opts.Scope, "scope", opts.Scope, "downloads, documents, desktop, movies, music, pictures, applications, or all")
+	fs.Int64Var(&opts.MinSizeMiB, "min-size-mib", opts.MinSizeMiB, "large-file threshold in MiB")
+	fs.IntVar(&opts.OlderThanDays, "older-than-days", opts.OlderThanDays, "days since modification (not last use)")
+	fs.IntVar(&opts.Limit, "limit", opts.Limit, "maximum entries per list (1–200)")
+	fs.BoolVar(&opts.JSON, "json", false, "write a read-only storage report")
+	if err := parse(fs, args); err != nil {
+		return Options{}, err
+	}
+	if !cleanup.ValidExploreScope(opts.Scope) {
+		return Options{}, fmt.Errorf("unknown exploration scope %q", opts.Scope)
+	}
+	if opts.MinSizeMiB < 1 || opts.MinSizeMiB > 1048576 || opts.OlderThanDays < 1 || opts.OlderThanDays > 36500 || opts.Limit < 1 || opts.Limit > 200 {
+		return Options{}, errors.New("explore requires size 1–1048576 MiB, age 1–36500 days, and limit 1–200")
 	}
 	return opts, nil
 }
@@ -260,6 +289,7 @@ func Usage() string {
 Usage:
   mac-cleanup-studio dashboard [--listen 127.0.0.1:0] [--no-open]
   mac-cleanup-studio capabilities [--json]
+  mac-cleanup-studio explore [--scope downloads|documents|desktop|movies|music|pictures|applications|all] [--min-size-mib 100] [--older-than-days 180] [--limit 50] [--json]
   mac-cleanup-studio scan [--profile safe|balanced|review|all] [--rules id,...] [--json]
   mac-cleanup-studio recommend [--profile safe|balanced|review|all] [--rules id,...] [--json]
   mac-cleanup-studio clean [--profile safe|balanced|review|all] [--rules id,...] [--apply --yes] [--json]

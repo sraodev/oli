@@ -1,5 +1,18 @@
 # Safety model
 
+## Read-only personal-folder exploration
+
+Storage Atlas (`explore`) is separate from the cleanup engine's frozen scan
+plans. It accepts only compiled scope IDs, reads metadata through
+descriptor-relative roots, skips symlinks and filesystem boundaries, and
+checks directory identities after opening. It cannot authorize deletion.
+Downloads and other personal folders remain outside cleanup rules.
+
+Reports are bounded and explicitly marked partial on access errors or scan
+limits. Logical and allocated totals are estimates, not reclaimable sizes.
+Old modification timestamps do not prove that a file is unused. Files inside
+app bundles and libraries should be managed with their owning application.
+
 Mac Cleanup Studio removes files only after a visible scan and review boundary.
 This document describes what that boundary means and what it cannot guarantee.
 

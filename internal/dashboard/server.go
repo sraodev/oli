@@ -19,6 +19,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
 )
 
 const (
@@ -53,6 +55,7 @@ type Service interface {
 	Disk(context.Context) (DiskUsage, error)
 	Scan(context.Context, ScanRequest, func(ScanEvent) error) error
 	Clean(context.Context, CleanRequest, func(CleanEvent) error) error
+	Explore(context.Context, string) (*cleanup.Exploration, error)
 }
 
 // DiskUsage is the measured capacity of the volume being cleaned.
@@ -258,6 +261,8 @@ func (a *appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.handleDisk(w, r)
 	case "/api/scan":
 		a.handleScan(w, r)
+	case "/api/explore":
+		a.handleExplore(w, r)
 	case "/api/clean":
 		a.handleClean(w, r)
 	case "/", "/index.html":
@@ -346,6 +351,34 @@ func (a *appHandler) handleScan(w http.ResponseWriter, r *http.Request) {
 			Message: "The scan stopped before it could finish.",
 		}})
 	}
+}
+
+func (a *appHandler) handleExplore(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w, http.MethodPost)
+		return
+	}
+	if !isJSON(r.Header.Get("Content-Type")) {
+		writeError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json.")
+		return
+	}
+	var request *struct {
+		Scope string `json:"scope"`
+	}
+	if err := decodeRequest(w, r, &request); err != nil || request == nil || !cleanup.ValidExploreScope(request.Scope) {
+		writeError(w, http.StatusBadRequest, "Choose one supported scope; paths and cleanup flags are not accepted.")
+		return
+	}
+	ctx, cancel := a.operationContext(r.Context())
+	defer cancel()
+	ctx, timeout := context.WithTimeout(ctx, 2*time.Minute)
+	defer timeout()
+	report, err := a.service.Explore(ctx, request.Scope)
+	if err != nil {
+		writeError(w, http.StatusConflict, "Exploration could not finish. Wait for other operations, then try a narrower scope.")
+		return
+	}
+	writeJSON(w, http.StatusOK, report)
 }
 
 func (a *appHandler) handleClean(w http.ResponseWriter, r *http.Request) {

@@ -20,6 +20,26 @@ exposed.
 The current schema identifier is `mac-cleanup-studio/v1`. Consumers should
 reject unknown major identifiers instead of guessing at their meaning.
 
+## Read-only storage discovery
+
+`capabilities --json` publishes `exploration_scopes` separately from cleanup
+rules. `explore --scope downloads --json` returns a versioned envelope with
+`mode: "explore"` and a `report` containing folder totals, top-level folder
+sizes, large files, old files, thresholds, warnings, and a `partial` flag.
+
+Exploration scopes are not cleanup rule IDs. There is no scan ID or deletion
+plan in this report; never infer reclaimable space from its sizes. The
+command does not accept `--apply`, `--yes`, or arbitrary paths. It defaults
+to files at least 100 MiB and modification age of at least 180 days, with
+at most 50 results in each list. `--limit` accepts 1–200. Hard-link aliases
+are omitted after the first encountered inode.
+
+Scanning stops at 200,000 entries or depth 64; CLI/API execution times out
+after two minutes. A completed report with skipped or bounded areas sets
+`partial: true` and emits up to 100 warnings; exit 0 alone does not mean every
+file was inspected. Cancellation or timeout returns a nonzero exit instead
+of a completed report. No file contents are opened for inspection.
+
 ## Safe automation flow
 
 1. Run `capabilities --json` and validate `schema_version`.

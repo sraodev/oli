@@ -77,6 +77,8 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		err = runCapabilities(opts, engine, stdout)
 	case cli.CommandScan:
 		err = runScan(ctx, opts, engine, home, stdout)
+	case cli.CommandExplore:
+		err = runExplore(ctx, opts, engine, stdout)
 	case cli.CommandRecommend:
 		err = runRecommend(ctx, opts, engine, home, stdout)
 	case cli.CommandClean, cli.CommandAuto:
@@ -199,6 +201,7 @@ func runCapabilities(opts cli.Options, engine *cleanup.Engine, output io.Writer)
 	commands := []commandCapability{
 		{Name: cli.CommandCapabilities, ReadOnly: true, JSON: true, Description: "Discover the versioned CLI contract and compiled cleanup rules."},
 		{Name: cli.CommandScan, ReadOnly: true, JSON: true, Description: "Measure selected categories and list candidates."},
+		{Name: cli.CommandExplore, ReadOnly: true, JSON: true, Description: "Inspect folder sizes and large/old files in fixed personal scopes; never deletes."},
 		{Name: cli.CommandRecommend, ReadOnly: true, JSON: true, Description: "Explain deterministic cleanup recommendations."},
 		{Name: cli.CommandClean, ReadOnly: false, JSON: true, Description: "Preview cleanup, or apply it only with --apply --yes."},
 		{Name: cli.CommandAuto, ReadOnly: false, JSON: true, Description: "Use the fixed safe profile; still requires --apply --yes to delete."},
@@ -211,25 +214,27 @@ func runCapabilities(opts cli.Options, engine *cleanup.Engine, output io.Writer)
 		{ID: cli.ProfileAll, Description: "All rules for inspection; cleanup excludes report-only rules."},
 	}
 	document := struct {
-		SchemaVersion string              `json:"schema_version"`
-		Product       string              `json:"product"`
-		Version       string              `json:"version"`
-		Commit        string              `json:"commit"`
-		BuildDate     string              `json:"build_date"`
-		Commands      []commandCapability `json:"commands"`
-		Profiles      []profileCapability `json:"profiles"`
-		Rules         []cleanup.RuleInfo  `json:"rules"`
-		Safety        map[string]any      `json:"safety"`
-		ExitCodes     map[string]int      `json:"exit_codes"`
+		SchemaVersion     string                 `json:"schema_version"`
+		Product           string                 `json:"product"`
+		Version           string                 `json:"version"`
+		Commit            string                 `json:"commit"`
+		BuildDate         string                 `json:"build_date"`
+		Commands          []commandCapability    `json:"commands"`
+		Profiles          []profileCapability    `json:"profiles"`
+		Rules             []cleanup.RuleInfo     `json:"rules"`
+		ExplorationScopes []cleanup.ExploreScope `json:"exploration_scopes"`
+		Safety            map[string]any         `json:"safety"`
+		ExitCodes         map[string]int         `json:"exit_codes"`
 	}{
-		SchemaVersion: schemaVersion,
-		Product:       "mac-cleanup-studio",
-		Version:       version,
-		Commit:        commit,
-		BuildDate:     buildDate,
-		Commands:      commands,
-		Profiles:      profiles,
-		Rules:         engine.Rules(),
+		SchemaVersion:     schemaVersion,
+		Product:           "mac-cleanup-studio",
+		Version:           version,
+		Commit:            commit,
+		BuildDate:         buildDate,
+		Commands:          commands,
+		Profiles:          profiles,
+		Rules:             engine.Rules(),
+		ExplorationScopes: cleanup.ExplorationScopes(),
 		Safety: map[string]any{
 			"destructive_by_default":   false,
 			"arbitrary_paths_accepted": false,

@@ -35,6 +35,10 @@
           Cleanup plan
           <span class="nav-count" id="nav-rule-count">0</span>
         </a>
+        <a class="nav-item" href="#storage-atlas">
+          <span class="nav-icon nav-icon-rules" aria-hidden="true"></span>
+          Storage Atlas
+        </a>
         <a class="nav-item" href="#activity">
           <span class="nav-icon nav-icon-activity" aria-hidden="true"></span>
           Activity
@@ -83,7 +87,7 @@
           <div class="section-heading">
             <div>
               <p class="eyebrow">MACINTOSH STORAGE</p>
-              <h2 id="storage-title">Disk health</h2>
+              <h2 id="storage-title">Storage snapshot</h2>
             </div>
             <span class="volume-label" id="volume-label">Loading volume…</span>
           </div>
@@ -175,6 +179,55 @@
             <b id="scan-progress-percent">0%</b>
           </div>
           <progress id="scan-progress" max="100" value="0">0%</progress>
+        </div>
+      </section>
+
+      <section class="atlas-section panel" id="storage-atlas" aria-labelledby="atlas-title">
+        <div class="section-heading wide">
+          <div>
+            <p class="eyebrow">DISCOVER · NOT DELETE</p>
+            <h2 id="atlas-title">Storage Atlas</h2>
+          </div>
+          <span class="atlas-badge">READ ONLY</span>
+        </div>
+        <p class="atlas-intro">See where your space goes. Inspect large files, old files, and folder sizes without touching your personal data.</p>
+        <div class="atlas-controls">
+          <label for="atlas-scope">Look inside</label>
+          <select id="atlas-scope">
+            <option value="downloads">Downloads</option>
+            <option value="documents">Documents</option>
+            <option value="desktop">Desktop</option>
+            <option value="movies">Movies</option>
+            <option value="music">Music</option>
+            <option value="pictures">Pictures</option>
+            <option value="applications">User applications</option>
+            <option value="all">All seven personal folders</option>
+          </select>
+          <button type="button" class="primary-button" id="atlas-button">Explore storage</button>
+        </div>
+        <p id="atlas-status" class="atlas-status" role="status">Metadata only. No file contents are read; no files are selected for cleanup.</p>
+        <progress id="atlas-progress" aria-label="Inspecting storage" hidden></progress>
+        <div id="atlas-results" hidden>
+          <div class="atlas-metrics">
+            <div><span>Allocated size</span><strong id="atlas-allocated">—</strong></div>
+            <div><span>Logical size</span><strong id="atlas-logical">—</strong></div>
+            <div><span>Unique files</span><strong id="atlas-count">—</strong></div>
+          </div>
+          <div class="atlas-scopes" id="atlas-scopes"></div>
+          <div class="atlas-tabs" role="group" aria-label="Storage findings">
+            <button type="button" data-atlas-list="folders" aria-pressed="true">Folder sizes</button>
+            <button type="button" data-atlas-list="large_files" aria-pressed="false">Large files</button>
+            <button type="button" data-atlas-list="old_files" aria-pressed="false">Old files</button>
+          </div>
+          <p class="atlas-status" id="atlas-list-note"></p>
+          <div class="atlas-table-wrap">
+            <table class="atlas-table">
+              <thead><tr><th scope="col">Location</th><th scope="col">Allocated</th><th scope="col">Logical</th><th scope="col">Modified</th></tr></thead>
+              <tbody id="atlas-items"></tbody>
+            </table>
+          </div>
+          <div id="atlas-warnings" class="issue-list"></div>
+          <p class="atlas-footnote">Sizes are estimates, not reclaimable space. Old means not modified for 180 days—not unused. Files inside app bundles or libraries should be managed in their owning app.</p>
         </div>
       </section>
 

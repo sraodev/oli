@@ -9,14 +9,49 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
 )
 
 const testToken = "0123456789abcdef0123456789abcdef"
 
 type fakeService struct {
-	diskFn  func(context.Context) (DiskUsage, error)
-	scanFn  func(context.Context, ScanRequest, func(ScanEvent) error) error
-	cleanFn func(context.Context, CleanRequest, func(CleanEvent) error) error
+	diskFn    func(context.Context) (DiskUsage, error)
+	scanFn    func(context.Context, ScanRequest, func(ScanEvent) error) error
+	cleanFn   func(context.Context, CleanRequest, func(CleanEvent) error) error
+	exploreFn func(context.Context, string) (*cleanup.Exploration, error)
+}
+
+func (f *fakeService) Explore(ctx context.Context, scope string) (*cleanup.Exploration, error) {
+	if f.exploreFn != nil {
+		return f.exploreFn(ctx, scope)
+	}
+	return &cleanup.Exploration{Action: cleanup.ActionScanOnly, Scope: scope}, nil
+}
+
+func TestExploreEndpointIsAuthenticatedAndPathFree(t *testing.T) {
+	handler := newTestHandler(t, &fakeService{})
+	for _, test := range []struct {
+		body   string
+		token  string
+		status int
+	}{
+		{`{"scope":"downloads"}`, "", http.StatusUnauthorized},
+		{`{"scope":"downloads"}`, testToken, http.StatusOK},
+		{`{"scope":"../../"}`, testToken, http.StatusBadRequest},
+		{`{"scope":"downloads","path":"/tmp"}`, testToken, http.StatusBadRequest},
+		{`{"scope":"downloads","apply":true}`, testToken, http.StatusBadRequest},
+		{`null`, testToken, http.StatusBadRequest},
+	} {
+		request := localRequest(http.MethodPost, "/api/explore", test.body)
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Authorization", "Bearer "+test.token)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != test.status {
+			t.Fatalf("body=%s status=%d want=%d", test.body, response.Code, test.status)
+		}
+	}
 }
 
 func (f *fakeService) Disk(ctx context.Context) (DiskUsage, error) {

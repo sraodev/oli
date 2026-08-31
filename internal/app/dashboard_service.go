@@ -50,6 +50,15 @@ func (s *DashboardService) Disk(context.Context) (dashboard.DiskUsage, error) {
 	}, nil
 }
 
+func (s *DashboardService) Explore(ctx context.Context, scope string) (*cleanup.Exploration, error) {
+	release, err := s.beginOperation()
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	return s.engine.Explore(ctx, cleanup.ExploreOptions{Scope: scope})
+}
+
 func (s *DashboardService) Scan(ctx context.Context, request dashboard.ScanRequest, send func(dashboard.ScanEvent) error) error {
 	release, err := s.beginOperation()
 	if err != nil {

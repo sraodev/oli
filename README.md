@@ -115,6 +115,30 @@ Run the binary directly:
 
 No installer or prebuilt release is required for a source build.
 
+## Storage Atlas: inspect personal files
+
+Find folder sizes, large files, and files not modified recently, without
+creating a cleanup plan:
+
+```sh
+./bin/mac-cleanup-studio explore --scope downloads
+./bin/mac-cleanup-studio explore --scope documents --min-size-mib 250 --older-than-days 365 --json
+```
+
+Scopes are `downloads`, `documents`, `desktop`, `movies`, `music`, `pictures`,
+`applications` (only `~/Applications`), or `all` (these seven scopes, not the
+whole disk). The dashboard has the same inspection capability in **Storage
+Atlas**, with separate folder-size, large-file, and old-file views.
+
+Inspection reads metadata, not file contents. It never follows symlinks or
+provides deletion actions for these personal folders. Hard links count once;
+files that change during inspection and APFS features can affect estimates.
+“Old” means modification age, not last use. Partial scans and skipped areas
+are reported, and list results are bounded rather than exhaustive.
+
+See the [feature coverage and roadmap](docs/feature-parity.md) for what is
+implemented and what remains before broader Mac-maintenance feature parity.
+
 ## Release binaries
 
 Tagged releases publish separate macOS binaries for Apple Silicon (`arm64`)
@@ -236,6 +260,7 @@ address bar after loading. Do not expose the listener or share its launch URL.
 | --- | --- | --- |
 | `dashboard [--no-open] [--listen 127.0.0.1:0]` | Open the local interactive dashboard | No |
 | `capabilities [--json]` | Discover commands, rules, profiles, safety flags, and exit codes | No |
+| `explore [--scope downloads\|documents\|desktop\|movies\|music\|pictures\|applications\|all] [--min-size-mib 100] [--older-than-days 180] [--limit 50] [--json]` | Inspect personal-folder sizes and large/old files | Never |
 | `scan [--profile safe\|balanced\|review\|all] [--rules id,...] [--json]` | Calculate and display candidates | No |
 | `recommend [--profile safe\|balanced\|review\|all] [--rules id,...] [--json]` | Explain deterministic cleanup suggestions | No |
 | `clean [--rules id,...] [--profile safe\|balanced\|review\|all] [--apply --yes] [--json]` | Review or explicitly apply a selected cleanup | No |
