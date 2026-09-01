@@ -845,8 +845,10 @@
 
   function renderExploration() {
     const report = state.exploration;
+    document.dispatchEvent(new CustomEvent("storage-map:report", {detail: report}));
     elements.atlasResults.hidden = false;
     elements.atlasStatus.textContent = `${report.partial ? "Partial report" : "Inspection complete"} · ${formatCount(report.entries_inspected)} entries · ${formatCount(report.total.symlinks)} symlinks skipped. No files changed.`;
+    if (report.warnings_omitted) elements.atlasStatus.textContent += ` ${report.warnings_omitted} additional warnings omitted.`;
     elements.atlasAllocated.textContent = formatBytes(report.total.allocated_bytes);
     elements.atlasLogical.textContent = formatBytes(report.total.logical_bytes);
     elements.atlasCount.textContent = formatCount(report.total.unique_files);

@@ -40,6 +40,15 @@ after two minutes. A completed report with skipped or bounded areas sets
 file was inspected. Cancellation or timeout returns a nonzero exit instead
 of a completed report. No file contents are opened for inspection.
 
+Exploration also emits a read-only `map_nodes` hierarchy (maximum 5,000 nodes),
+`map_nodes_omitted`, and `warnings_omitted`. Node metrics retain complete measured
+subtree totals even when display nodes are omitted; per-folder `unmapped_*`
+fields disclose the measured remainder. Navigation IDs never authorize cleanup.
+`explore --map` and search/type/size/date flags select a bounded `map_view` without
+changing the report. See the [map contract](issue-9-storage-map.md) for exact
+filter boundaries and snapshot-only navigation. Unknown unreadable sizes remain
+unknown, not zero; matching parent and descendant rows must not be summed.
+
 ## Safe automation flow
 
 1. Run `capabilities --json` and validate `schema_version`.

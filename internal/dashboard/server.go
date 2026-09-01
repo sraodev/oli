@@ -290,6 +290,8 @@ func (a *appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		serveEmbedded(w, r, "static/app.css", "text/css; charset=utf-8")
 	case "/assets/app.js":
 		serveEmbedded(w, r, "static/app.js", "text/javascript; charset=utf-8")
+	case "/assets/map.js":
+		serveEmbedded(w, r, "static/map.js", "text/javascript; charset=utf-8")
 	case "/favicon.ico":
 		w.WriteHeader(http.StatusNoContent)
 	default:

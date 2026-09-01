@@ -14,21 +14,24 @@ import (
 // Exploration is deliberately separate from Scan: it cannot carry a deletion
 // plan. It inspects metadata only, including in personal folders.
 type Exploration struct {
-	Action       Action        `json:"action"`
-	StartedAt    time.Time     `json:"started_at"`
-	CompletedAt  time.Time     `json:"completed_at"`
-	Scope        string        `json:"scope"`
-	MinSizeBytes int64         `json:"min_size_bytes"`
-	OlderDays    int           `json:"older_than_days"`
-	Limit        int           `json:"limit"`
-	Entries      int           `json:"entries_inspected"`
-	Partial      bool          `json:"partial"`
-	Total        Metrics       `json:"total"`
-	Scopes       []ScopeUsage  `json:"scopes"`
-	Folders      []ExploreItem `json:"folders"`
-	LargeFiles   []ExploreItem `json:"large_files"`
-	OldFiles     []ExploreItem `json:"old_files"`
-	Warnings     []Warning     `json:"warnings"`
+	MapNodes        []MapNode     `json:"map_nodes"`
+	MapNodesOmitted int           `json:"map_nodes_omitted"`
+	WarningsOmitted int           `json:"warnings_omitted"`
+	Action          Action        `json:"action"`
+	StartedAt       time.Time     `json:"started_at"`
+	CompletedAt     time.Time     `json:"completed_at"`
+	Scope           string        `json:"scope"`
+	MinSizeBytes    int64         `json:"min_size_bytes"`
+	OlderDays       int           `json:"older_than_days"`
+	Limit           int           `json:"limit"`
+	Entries         int           `json:"entries_inspected"`
+	Partial         bool          `json:"partial"`
+	Total           Metrics       `json:"total"`
+	Scopes          []ScopeUsage  `json:"scopes"`
+	Folders         []ExploreItem `json:"folders"`
+	LargeFiles      []ExploreItem `json:"large_files"`
+	OldFiles        []ExploreItem `json:"old_files"`
+	Warnings        []Warning     `json:"warnings"`
 }
 
 type ExploreScope struct {
@@ -111,6 +114,8 @@ func (e *Engine) Explore(ctx context.Context, opts ExploreOptions) (*Exploration
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -128,7 +133,7 @@ func (e *Engine) Explore(ctx context.Context, opts ExploreOptions) (*Exploration
 	if err != nil || !e.homeFingerprint.sameIdentity(fp) {
 		return nil, errors.New("exploration home identity changed")
 	}
-	walker := explorer{ctx: ctx, opts: opts, report: report, device: fp.Device, seen: make(map[string]bool)}
+	walker := explorer{ctx: ctx, opts: opts, report: report, device: fp.Device, seen: make(map[string]bool), storageMap: newMapBuilder()}
 	for _, scope := range ExplorationScopes() {
 		if opts.Scope != "all" && scope.ID != opts.Scope {
 			continue
@@ -136,11 +141,14 @@ func (e *Engine) Explore(ctx context.Context, opts ExploreOptions) (*Exploration
 		name := filepath.Base(scope.DisplayPath)
 		info, scopeFP, err := inspectInRoot(home, name)
 		if os.IsNotExist(err) {
+			walker.storageMap.add(scope.DisplayPath, "directory", time.Time{}, Metrics{})
 			report.Scopes = append(report.Scopes, ScopeUsage{ExploreScope: scope})
 			continue
 		}
 		if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+			index := walker.storageMap.enter(scope.DisplayPath, time.Time{})
 			walker.warn(scope.DisplayPath, "scope_unavailable", "Scope is unavailable, not a directory, or a symlink.")
+			walker.storageMap.leave(index, Metrics{})
 			continue
 		}
 		metrics, err := walker.directory(home, name, scope.DisplayPath, scopeFP, 0)
@@ -157,27 +165,35 @@ func (e *Engine) Explore(ctx context.Context, opts ExploreOptions) (*Exploration
 		return nil, err
 	}
 	report.CompletedAt = time.Now()
+	report.MapNodes = walker.storageMap.finish(report.Total)
+	report.MapNodesOmitted = walker.storageMap.omitted
 	return report, nil
 }
 
 type explorer struct {
-	ctx     context.Context
-	opts    ExploreOptions
-	report  *Exploration
-	device  uint64
-	seen    map[string]bool
-	stopped bool
+	storageMap *mapBuilder
+	ctx        context.Context
+	opts       ExploreOptions
+	report     *Exploration
+	device     uint64
+	seen       map[string]bool
+	stopped    bool
 }
 
 func (w *explorer) warn(path, code, message string) {
+	w.storageMap.warn()
 	w.report.Partial = true
 	if len(w.report.Warnings) < 100 {
 		w.report.Warnings = append(w.report.Warnings, Warning{DisplayPath: path, Code: code, Message: message})
+	} else {
+		w.report.WarningsOmitted++
 	}
 }
 
 func (w *explorer) directory(parent *os.Root, name, display string, expected fingerprint, depth int) (Metrics, error) {
 	var total Metrics
+	index := w.storageMap.enter(display, time.Unix(0, expected.ModifiedNano))
+	defer func() { w.storageMap.leave(index, total) }()
 	if err := w.ctx.Err(); err != nil {
 		return total, err
 	}
@@ -260,11 +276,14 @@ func (w *explorer) directory(parent *os.Root, name, display string, expected fin
 			}
 			key := inodeKey(path, fp)
 			if w.seen[key] {
+				// Keep aliases navigable without counting their bytes again.
+				w.storageMap.add(path, "hardlink", info.ModTime(), Metrics{})
 				continue
 			}
 			w.seen[key] = true
 			metrics := Metrics{Items: 1, Files: 1, UniqueFiles: 1, LogicalBytes: info.Size(), AllocatedBytes: allocatedBytes(fp.Blocks), LatestModified: info.ModTime()}
 			addMetrics(&total, metrics)
+			w.storageMap.add(path, "file", info.ModTime(), metrics)
 			item := ExploreItem{DisplayPath: path, Kind: "file", Metrics: metrics, Modified: info.ModTime()}
 			if info.Size() >= w.opts.MinSizeBytes {
 				w.report.LargeFiles = topExploreItems(w.report.LargeFiles, item, w.opts.Limit)

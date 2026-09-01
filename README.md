@@ -149,6 +149,18 @@ Atlas**, with separate folder-size, large-file, and old-file views.
 Inspection reads metadata, not file contents. It never follows symlinks or
 provides deletion actions for these personal folders. Hard links count once;
 files that change during inspection and APFS features can affect estimates.
+
+The folder map adds recursive drilldown, breadcrumbs, subtree search and
+type/extension/size/modification-date filters over one snapshot. Hidden names,
+partial coverage and measured-but-unmapped bytes remain visible. Nothing in
+the map selects files for deletion.
+
+```sh
+./bin/mac-cleanup-studio explore --scope downloads --map --json
+./bin/mac-cleanup-studio explore --map --search report --extension .pdf
+```
+
+See the [map contract and verification](docs/issue-9-storage-map.md).
 “Old” means modification age, not last use. Partial scans and skipped areas
 are reported, and list results are bounded rather than exhaustive.
 

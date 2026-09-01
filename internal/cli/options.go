@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
 )
@@ -36,17 +37,25 @@ type Options struct {
 	Listen string
 	NoOpen bool
 
-	Profile       string
-	RuleIDs       []string
-	JSON          bool
-	Share         bool
-	Apply         bool
-	Yes           bool
-	Interactive   bool
-	Scope         string
-	MinSizeMiB    int64
-	OlderThanDays int
-	Limit         int
+	Profile        string
+	RuleIDs        []string
+	JSON           bool
+	Share          bool
+	Apply          bool
+	Yes            bool
+	Interactive    bool
+	Scope          string
+	MinSizeMiB     int64
+	OlderThanDays  int
+	Limit          int
+	Map            bool
+	Search         string
+	Kind           string
+	Extension      string
+	MapMinMiB      int64
+	MapMaxMiB      int64
+	ModifiedBefore string
+	ModifiedAfter  string
 }
 
 // Parse validates args without writing usage text or exiting the process.
@@ -186,11 +195,22 @@ func parseExplore(args []string) (Options, error) {
 	fs.IntVar(&opts.OlderThanDays, "older-than-days", opts.OlderThanDays, "days since modification (not last use)")
 	fs.IntVar(&opts.Limit, "limit", opts.Limit, "maximum entries per list (1–200)")
 	fs.BoolVar(&opts.JSON, "json", false, "write a read-only storage report")
+	fs.BoolVar(&opts.Map, "map", false, "show a bounded folder map instead of ranked lists")
+	fs.StringVar(&opts.Search, "search", "", "case-insensitive path text within the map snapshot")
+	fs.StringVar(&opts.Kind, "kind", "all", "map kind: all, file, directory, or hardlink")
+	fs.StringVar(&opts.Extension, "extension", "", "map file extension, such as .pdf")
+	fs.Int64Var(&opts.MapMinMiB, "map-min-mib", 0, "minimum logical size for map rows")
+	fs.Int64Var(&opts.MapMaxMiB, "map-max-mib", 0, "maximum logical size for map rows; zero means no maximum")
+	fs.StringVar(&opts.ModifiedBefore, "modified-before", "", "map rows modified before UTC date YYYY-MM-DD")
+	fs.StringVar(&opts.ModifiedAfter, "modified-after", "", "map rows modified on/after UTC date YYYY-MM-DD")
 	if err := parse(fs, args); err != nil {
 		return Options{}, err
 	}
 	if !cleanup.ValidExploreScope(opts.Scope) {
 		return Options{}, fmt.Errorf("unknown exploration scope %q", opts.Scope)
+	}
+	if _, err := opts.MapFilter(); err != nil {
+		return Options{}, err
 	}
 	if opts.MinSizeMiB < 1 || opts.MinSizeMiB > 1048576 || opts.OlderThanDays < 1 || opts.OlderThanDays > 36500 || opts.Limit < 1 || opts.Limit > 200 {
 		return Options{}, errors.New("explore requires size 1–1048576 MiB, age 1–36500 days, and limit 1–200")
@@ -224,6 +244,38 @@ func parseClean(args []string) (Options, error) {
 		return Options{}, err
 	}
 	return opts, nil
+}
+
+func (o Options) MapFilter() (cleanup.MapFilter, error) {
+	f := cleanup.MapFilter{Search: strings.TrimSpace(o.Search), Kind: o.Kind, Extension: strings.TrimSpace(o.Extension)}
+	if len(f.Search) > 256 || len(f.Extension) > 32 || strings.ContainsAny(f.Extension, "/\\") || (f.Kind != "" && f.Kind != "all" && f.Kind != "file" && f.Kind != "directory" && f.Kind != "hardlink") {
+		return f, errors.New("invalid map search, extension or kind")
+	}
+	if f.Extension == "." {
+		f.Extension = ""
+	}
+	if o.MapMinMiB < 0 || o.MapMaxMiB < 0 || o.MapMinMiB > 1048576 || o.MapMaxMiB > 1048576 || o.MapMaxMiB > 0 && o.MapMaxMiB < o.MapMinMiB {
+		return f, errors.New("invalid map size bounds")
+	}
+	f.MinBytes = o.MapMinMiB << 20
+	f.MaxBytes = o.MapMaxMiB << 20
+	var err error
+	if o.ModifiedBefore != "" {
+		f.Before, err = time.Parse("2006-01-02", o.ModifiedBefore)
+		if err != nil {
+			return f, errors.New("modified-before must be a UTC YYYY-MM-DD date")
+		}
+	}
+	if o.ModifiedAfter != "" {
+		f.After, err = time.Parse("2006-01-02", o.ModifiedAfter)
+		if err != nil {
+			return f, errors.New("modified-after must be a UTC YYYY-MM-DD date")
+		}
+	}
+	if !f.Before.IsZero() && !f.After.IsZero() && !f.After.Before(f.Before) {
+		return f, errors.New("modified-after must precede modified-before")
+	}
+	return f, nil
 }
 
 func parseAuto(args []string) (Options, error) {
@@ -311,6 +363,7 @@ Usage:
   mac-cleanup-studio dashboard [--listen 127.0.0.1:0] [--no-open]
   mac-cleanup-studio capabilities [--json]
   mac-cleanup-studio explore [--scope downloads|documents|desktop|movies|music|pictures|applications|all] [--min-size-mib 100] [--older-than-days 180] [--limit 50] [--json]
+  mac-cleanup-studio explore --map [--search text] [--kind all|file|directory|hardlink] [--extension .pdf] [--map-min-mib 0] [--map-max-mib 0] [--modified-after YYYY-MM-DD] [--modified-before YYYY-MM-DD] [--json]
   mac-cleanup-studio scan [--profile safe|balanced|review|all] [--rules id,...] [--json]
   mac-cleanup-studio recommend [--profile safe|balanced|review|all] [--rules id,...] [--json]
   mac-cleanup-studio clean [--profile safe|balanced|review|all] [--rules id,...] [--interactive] [--apply --yes] [--json]

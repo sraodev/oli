@@ -19,7 +19,7 @@ spike, not an available restore feature; public release acceptance is open.
 | --- | --- | --- |
 | Combined care scan | Cache scan, explanations, risk/age selection, explicit apply | A unified report across independent inspection modules; no all-purpose health score |
 | Junk cleanup | Old user caches/logs, Xcode build data, developer caches, separate Trash review | App-specific disposable-data rules; never broaden into blanket Library deletion |
-| Disk visualization | Storage Atlas: selected personal-folder totals and top-level folder ranking | Recursive visual navigation and additional volumes |
+| Disk visualization | Storage Atlas: bounded recursive folder map, breadcrumbs, filters and explicit coverage accounting | Additional volumes; see issue #9 verification for local delivery status |
 | Large and old files | Metadata-only lists in CLI, JSON, and dashboard | Manual, recoverable actions after a separate safety design |
 | Downloads | Read-only inspection; never auto-deleted | File preview and explicit review workflows |
 | Duplicates and similar images | Not implemented | Content-hash confirmation, hard-link/clone awareness, cloud-placeholder exclusion; separate image similarity |

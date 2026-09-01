@@ -281,6 +281,7 @@ func runCapabilities(opts cli.Options, engine *cleanup.Engine, output io.Writer)
 			"scan_max_candidates":       2000,
 			"scan_max_warnings":         100,
 			"scan_max_depth":            64,
+			"storage_map_max_nodes":     cleanup.StorageMapLimit,
 			"operation_timeout_seconds": 120,
 		},
 		ExitCodes: map[string]int{"success": 0, "runtime_or_partial_failure": 1, "usage": 2, "cancelled": 130},

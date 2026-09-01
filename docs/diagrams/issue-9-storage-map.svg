@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="990" viewBox="0 0 1600 990">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#475569"/></marker>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #172033; }
+      .title { font-size: 34px; font-weight: 750; }
+      .heading { font-size: 24px; font-weight: 700; }
+      .label { font-size: 20px; font-weight: 700; }
+      .body { font-size: 17px; fill: #475569; }
+      .small { font-size: 15px; fill: #475569; }
+      .tag { font-size: 13px; font-weight: 700; }
+      .built { fill: #dcfce7; stroke: #16803d; stroke-width: 2; }
+      .local { fill: #e0f2fe; stroke: #0376a9; stroke-width: 2; }
+      .partial { fill: #fff4cc; stroke: #b96b06; stroke-width: 2; }
+      .deferred { fill: #f3e8ff; stroke: #8236c4; stroke-width: 2; }
+      .flow { fill: none; stroke: #475569; stroke-width: 2.5; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1600" height="990" fill="white"/>
+  <text x="48" y="62" class="title">Issue #9 · Interactive Storage Map</text>
+  <text x="48" y="96" class="body">Reviewer roadmap · F08 only · codex/issue-9-storage-map · base 78010ac · local, not published</text>
+  <rect x="48" y="125" width="180" height="36" rx="8" class="built"/><text x="66" y="149" class="tag">EXISTING FOUNDATION</text>
+  <rect x="248" y="125" width="205" height="36" rx="8" class="local"/><text x="266" y="149" class="tag">LOCAL IMPLEMENTATION</text>
+  <rect x="473" y="125" width="205" height="36" rx="8" class="partial"/><text x="491" y="149" class="tag">COVERAGE BOUNDARY</text>
+  <rect x="698" y="125" width="180" height="36" rx="8" class="deferred"/><text x="716" y="149" class="tag">OUT OF SCOPE</text>
+
+  <text x="48" y="212" class="heading">One metadata walk → one immutable navigation snapshot</text>
+  <rect x="48" y="244" width="326" height="165" rx="12" class="built"/>
+  <text x="68" y="274" class="tag">1 · INSPECT EXISTING WALKER</text>
+  <text x="68" y="309" class="label">Fixed, explicit scopes</text>
+  <text x="68" y="342" class="body">No arbitrary-path API or symlink walk</text>
+  <text x="68" y="369" class="body">200k entries · depth 64 · 2 minutes</text>
+  <text x="68" y="394" class="small">explore.go · descriptor-relative metadata</text>
+  <path d="M374 326H416" class="flow"/>
+  <rect x="426" y="244" width="326" height="165" rx="12" class="local"/>
+  <text x="446" y="274" class="tag">2 · REVIEW ACCOUNTING FIRST</text>
+  <text x="446" y="309" class="label">Bounded hierarchy</text>
+  <text x="446" y="342" class="body">5,000 nodes; measurement continues</text>
+  <text x="446" y="369" class="body">Parent IDs · totals · partial ancestry</text>
+  <text x="446" y="394" class="small">storage_map.go · no second scan</text>
+  <path d="M752 326H794" class="flow"/>
+  <rect x="804" y="244" width="326" height="165" rx="12" class="local"/>
+  <text x="824" y="274" class="tag">3 · REVIEW SHARED READ MODEL</text>
+  <text x="824" y="309" class="label">CLI / JSON + dashboard</text>
+  <text x="824" y="342" class="body">Breadcrumbs · bars · keyboard · pages</text>
+  <text x="824" y="369" class="body">Search · type · extension · size · UTC</text>
+  <text x="824" y="394" class="small">Snapshot-only filters; totals never change</text>
+  <path d="M1130 326H1172" class="flow"/>
+  <rect x="1182" y="244" width="370" height="165" rx="12" class="local"/>
+  <text x="1202" y="274" class="tag">4 · VERIFY BEHAVIOR</text>
+  <text x="1202" y="309" class="label">Synthetic E2E + browser</text>
+  <text x="1202" y="342" class="body">HTTP / CLI · race · 5,020-file fixture</text>
+  <text x="1202" y="369" class="body">Enter / Space · dates · 100/5 rows</text>
+  <text x="1202" y="394" class="small">No personal-file scan or cleanup</text>
+
+  <text x="48" y="471" class="heading">Coverage is part of the result, not an estimated saving</text>
+  <rect x="48" y="498" width="480" height="157" rx="12" class="local"/>
+  <text x="68" y="534" class="label">Measured + represented</text>
+  <text x="68" y="566" class="body">Allocated and logical bytes stay separate.</text>
+  <text x="68" y="594" class="body">Dot-prefixed children included; hardlinks counted once.</text>
+  <text x="68" y="622" class="body">Aliases show zero bytes already attributed elsewhere.</text>
+  <rect x="560" y="498" width="480" height="157" rx="12" class="partial"/>
+  <text x="580" y="534" class="label">Measured + omitted from map</text>
+  <text x="580" y="566" class="body">Display cap never truncates measured totals.</text>
+  <text x="580" y="594" class="body">Direct-child remainder discloses unmapped bytes.</text>
+  <text x="580" y="622" class="body">Node and warning overflow counts remain visible.</text>
+  <rect x="1072" y="498" width="480" height="157" rx="12" class="partial"/>
+  <text x="1092" y="534" class="label">Unknown coverage</text>
+  <text x="1092" y="566" class="body">Unreadable or skipped size is unknown, not zero.</text>
+  <text x="1092" y="594" class="body">Partial state propagates to affected ancestors.</text>
+  <text x="1092" y="622" class="body">Empty filtered results do not prove an empty folder.</text>
+
+  <rect x="48" y="695" width="1504" height="98" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="68" y="730" class="label">Hard boundary: navigation IDs are never cleanup authority</text>
+  <text x="68" y="760" class="body">No new deletion path, cleanup plan or filesystem lookup while browsing. Search rows can overlap: never sum them.</text>
+  <rect x="48" y="823" width="1504" height="118" rx="12" class="deferred"/>
+  <text x="68" y="858" class="label">Separate roadmap work and acceptance gates remain separate</text>
+  <text x="68" y="890" class="body">F09+ external volumes, preview, duplicates and app inventory are not part of F08. P0 recovery / release gates are unchanged.</text>
+  <text x="68" y="918" class="body">Local verification does not imply a commit, push, PR, issue closure, public release or approval to mutate personal files.</text>
+</svg>

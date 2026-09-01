@@ -214,6 +214,25 @@
             <div><span>Unique files</span><strong id="atlas-count">—</strong></div>
           </div>
           <div class="atlas-scopes" id="atlas-scopes"></div>
+          <section id="storage-map" class="storage-map" aria-labelledby="map-title" hidden>
+            <div class="map-heading"><div><p class="eyebrow">ONE SNAPSHOT · EXPLORE, DON'T DELETE</p><h3 id="map-title" tabindex="-1">Folder map</h3></div><button type="button" id="map-up" class="secondary-button">Up one folder</button></div>
+            <nav id="map-breadcrumbs" class="map-breadcrumbs" aria-label="Folder breadcrumbs"></nav>
+            <p id="map-coverage" class="atlas-status"></p>
+            <form id="map-filters" class="map-filters" aria-label="Filter storage map">
+              <label>Search this subtree<input type="search" id="map-search" maxlength="256" placeholder="Name or path text"></label>
+              <label>Type<select id="map-kind"><option value="all">All types</option><option value="directory">Folders</option><option value="file">Files</option><option value="hardlink">Hard-link aliases</option></select></label>
+              <label>Extension<input id="map-extension" maxlength="32" placeholder=".pdf"></label>
+              <label>Minimum logical MiB<input id="map-min" type="number" min="0" max="1048576" step="1" value="0"></label>
+              <label>Maximum logical MiB<input id="map-max" type="number" min="0" max="1048576" step="1" value="0"></label>
+              <label>Modified on/after (UTC)<input id="map-after" type="date"></label>
+              <label>Modified before (UTC)<input id="map-before" type="date"></label>
+              <button type="reset" class="secondary-button">Reset map filters</button>
+            </form>
+            <p class="atlas-footnote">Zero maximum means no maximum. Filters search descendants; folder and file matches can overlap. Never sum search rows. Dot-prefixed names are included.</p>
+            <p id="map-status" role="status"></p>
+            <ol id="map-rows" class="map-rows" aria-label="Storage map rows"></ol>
+            <div class="map-pagination"><button type="button" class="secondary-button" id="map-previous">Previous map page</button><span id="map-page"></span><button type="button" class="secondary-button" id="map-next">Next map page</button></div>
+          </section>
           <div class="atlas-tabs" role="group" aria-label="Storage findings">
             <button type="button" data-atlas-list="folders" aria-pressed="true">Folder sizes</button>
             <button type="button" data-atlas-list="large_files" aria-pressed="false">Large files</button>
@@ -332,5 +351,6 @@
       </details>
     </article>
   </template>
+  <script src="/assets/map.js" defer></script>
 </body>
 </html>
