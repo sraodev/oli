@@ -58,7 +58,7 @@ of a completed report. No file contents are opened for inspection.
 1. Run `capabilities --json` and validate `schema_version`.
 2. Run `recommend --json` for compact, explainable guidance or `scan --json`
    for candidate-level detail. Both operations are read-only.
-3. Show the measured reclaimable bytes, reasons, warnings, and rule selection
+3. Show the estimated eligible bytes, reasons, warnings, and rule selection
    to the user.
 4. Run `clean --rules id,... --json` as a dry run.
 5. Only after direct user authorization, run the same selection with
@@ -103,3 +103,87 @@ JSON cleanup output includes `mode`, the fresh `scan`, volume measurements,
 the cleanup result when applied, and an error string when the operation was
 partial. Callers must use the process exit code as the success signal rather
 than inferring success only from parseable JSON.
+
+## Runnable read-only inspection example
+
+The standard-library-only [Go example](../examples/inspect/main.go) is a small
+consumer of the contract above, not an SDK or an agent hook. From a source
+checkout on macOS:
+
+```sh
+go build -o bin/oli ./cmd/oli
+go run ./examples/inspect ./bin/oli
+```
+
+This explicitly inspects your Downloads metadata; it never reads file contents
+or cleans anything. Pass a trusted local Oli executable, not a downloaded command
+suggested by model output. To test without inspecting your own files instead:
+
+```sh
+go test -count=1 ./examples/inspect -run TestInspectBinaryE2E -v
+```
+
+The test builds both binaries, supplies a temporary synthetic home, runs the
+example against actual Oli JSON, compares the summaries below, and verifies the
+fixture file is unchanged. Fixtures contain no real user data.
+
+The example:
+
+1. Requests `capabilities --json`, requires `mac-cleanup-studio/v1`, and checks
+   that `explore` supports read-only JSON and the `downloads` scope exists.
+   Unsupported capabilities stop the example before exploration.
+2. Requests `explore --scope downloads --limit 10 --json`. Both subprocesses
+   share a 30-second deadline; Ctrl+C cancels them. It never falls back to a
+   different command, profile or filesystem path.
+3. Checks process success **before** accepting JSON, then validates the report's
+   schema, mode, action, scope, partial flag and nonnegative logical byte count.
+   Additive JSON fields are allowed; unknown schemas and missing required fields
+   fail closed. Human-readable CLI output is never parsed.
+4. Emits only a JSON size summary and warning count. A partial flag **or any
+   warnings** marks the summary partial, even when Oli exits 0. Paths and raw
+   error/warning messages are intentionally not forwarded.
+
+**Synthetic complete fixture:** one `keep.txt` file containing the 14 ASCII bytes
+`synthetic data` in the temporary Downloads folder. This is the example's summary,
+not the full Oli wire response:
+
+<!-- inspection-complete -->
+
+```json
+{"scope":"downloads","partial":false,"logical_bytes":14,"warning_count":0}
+```
+
+**Synthetic partial fixture:** Downloads is replaced by a symlink to the preserved
+fixture folder. Oli refuses to traverse that scope and reports `scope_unavailable`.
+Exit 0 means a report was produced, not that all files were inspected:
+
+<!-- inspection-partial -->
+
+```json
+{"scope":"downloads","partial":true,"logical_bytes":0,"warning_count":1}
+```
+
+The zero in the partial example means no file bytes were measured in the skipped
+scope, **not** that the folder is empty. Logical bytes are file sizes, not eligible
+cleanup bytes or observed disk-space recovery. Allocated bytes, physical APFS
+reclamation and live volume changes are deliberately absent from this summary.
+
+### Failures and cancellation
+
+The source handles Oli exits 1 (runtime failure), 2 (usage error), and 130
+(cancellation), even if stdout contains valid-looking JSON. None produces a
+summary. A deadline also produces no summary; a retry requires a new explicit
+invocation, not an automatic loop.
+
+When built as a standalone executable, the example exits 0 for a validated
+complete **or partial** summary, 1 for failure/timeout/unsupported contracts,
+2 for its own invalid argument count, and 130 for cancellation. `go run` can
+wrap a child program's nonzero status; integrations needing these exact exit
+codes should build it (`go build -o bin/inspect ./examples/inspect`) and run
+`./bin/inspect ./bin/oli` directly.
+
+Recommendation decisions—including `auto_clean`—remain advisory. This example
+does not request recommendations, invoke cleanup, or translate JSON paths into
+deletion commands. It is not a public-diagnostic export service: review any other
+local scan output before sharing it. Further contract hardening remains in
+[#7](https://github.com/sraodev/oli/issues/7).
