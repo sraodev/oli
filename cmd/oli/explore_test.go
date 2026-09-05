@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
-	"github.com/sraodev/mac-cleanup-studio/internal/cli"
+	"github.com/sraodev/oli/internal/cleanup"
+	"github.com/sraodev/oli/internal/cli"
 )
 
 func TestRunExplorePartialReportAndCLIOptions(t *testing.T) {

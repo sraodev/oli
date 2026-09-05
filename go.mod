@@ -1,3 +1,3 @@
-module github.com/sraodev/mac-cleanup-studio
+module github.com/sraodev/oli
 
 go 1.25

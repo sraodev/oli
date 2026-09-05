@@ -42,11 +42,11 @@ jobs:
           mkdir -p dist
           build_date="$(git show -s --format=%cI "$GITHUB_SHA")"
           for arch in arm64 amd64; do
-            archive="mac-cleanup-studio-${GITHUB_REF_NAME}-darwin-${arch}"
+            archive="oli-${GITHUB_REF_NAME}-darwin-${arch}"
             mkdir -p "dist/${archive}"
             GOOS=darwin GOARCH="${arch}" go build -trimpath \
               -ldflags "-s -w -X main.version=${GITHUB_REF_NAME} -X main.commit=${GITHUB_SHA} -X main.buildDate=${build_date}" \
-              -o "dist/${archive}/mac-cleanup-studio" ./cmd/mac-cleanup-studio
+              -o "dist/${archive}/oli" ./cmd/oli
             tar -C dist -czf "dist/${archive}.tar.gz" "${archive}"
             rm -r "dist/${archive}"
           done
@@ -60,4 +60,4 @@ jobs:
           gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/SHA256SUMS
           --verify-tag
           --generate-notes
-          --title "Mac Cleanup Studio ${GITHUB_REF_NAME}"
+          --title "Oli ${GITHUB_REF_NAME}"

@@ -56,4 +56,4 @@ jobs:
           GOOS: darwin
         run: |
           mkdir -p dist
-          go build -trimpath -o "dist/mac-cleanup-studio-darwin-${GOARCH}" ./cmd/mac-cleanup-studio
+          go build -trimpath -o "dist/oli-darwin-${GOARCH}" ./cmd/oli

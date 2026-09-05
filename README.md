@@ -1,4 +1,6 @@
-# Mac Cleanup Studio
+# Oli
+
+**Open Lifecycle Intelligence — your machine’s housekeeper.**
 
 A CLI-first, agent-agnostic, interactive macOS cleanup tool that shows what
 could be removed, how much space it represents, and why each item is eligible
@@ -9,14 +11,14 @@ before anything is deleted.
 > Trash, and the deletion may not be recoverable. Scan and review the exact
 > paths before using CLI `--apply --yes` or typing `DELETE` in the dashboard.
 
-Mac Cleanup Studio is an early-stage, macOS-only project. It builds as one
+Oli is an early-stage, macOS-only project. It builds as one
 standard-library Go binary, operates only within the current user's home, and
 does not ask for `sudo`.
 
 ## Why this project
 
 Many cleanup scripts combine discovery and deletion in one opaque operation.
-Mac Cleanup Studio keeps three boundaries visible:
+Oli keeps three boundaries visible:
 
 1. **Scan** is read-only and records logical bytes plus an allocated-byte
    reclaimable estimate.
@@ -93,23 +95,31 @@ delay visible reclamation.
 
 ## Build from source
 
+The project and CLI have been renamed to **Oli**. The executable is `oli`,
+the Go command is `./cmd/oli`, and the repository is `sraodev/oli`.
+Update scripts that invoke the old executable name; no compatibility executable
+is installed automatically. Existing binaries and local data are not moved or
+deleted. The JSON `schema_version` retains its existing identifier so a brand
+change does not silently revise the automation contract; see
+[agent compatibility](docs/agent-interface.md#rename-compatibility).
+
 Requirements:
 
 - macOS
 - the Go version declared in `go.mod`
 
 ```sh
-git clone https://github.com/sraodev/mac-cleanup-studio.git
-cd mac-cleanup-studio
+git clone https://github.com/sraodev/oli.git
+cd oli
 go test ./...
 mkdir -p ./bin
-go build -trimpath -o ./bin/mac-cleanup-studio ./cmd/mac-cleanup-studio
+go build -trimpath -o ./bin/oli ./cmd/oli
 ```
 
 Run the binary directly:
 
 ```sh
-./bin/mac-cleanup-studio scan
+./bin/oli scan
 ```
 
 No installer or prebuilt release is required for a source build.
@@ -120,8 +130,8 @@ Find folder sizes, large files, and files not modified recently, without
 creating a cleanup plan:
 
 ```sh
-./bin/mac-cleanup-studio explore --scope downloads
-./bin/mac-cleanup-studio explore --scope documents --min-size-mib 250 --older-than-days 365 --json
+./bin/oli explore --scope downloads
+./bin/oli explore --scope documents --min-size-mib 250 --older-than-days 365 --json
 ```
 
 Scopes are `downloads`, `documents`, `desktop`, `movies`, `music`, `pictures`,
@@ -146,8 +156,8 @@ Download the archive for your Mac and verify it before extracting:
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-tar -xzf mac-cleanup-studio-vX.Y.Z-darwin-arm64.tar.gz
-./mac-cleanup-studio-vX.Y.Z-darwin-arm64/mac-cleanup-studio version
+tar -xzf oli-vX.Y.Z-darwin-arm64.tar.gz
+./oli-vX.Y.Z-darwin-arm64/oli version
 ```
 
 Release binaries embed their version, commit, and build date. Early community
@@ -163,30 +173,30 @@ the race tests before publishing either architecture.
 Start with a read-only scan:
 
 ```sh
-./bin/mac-cleanup-studio scan --profile safe
-./bin/mac-cleanup-studio scan --profile safe --json
+./bin/oli scan --profile safe
+./bin/oli scan --profile safe --json
 ```
 
 Discover the complete machine-readable contract, then ask for explainable,
 read-only recommendations:
 
 ```sh
-./bin/mac-cleanup-studio capabilities --json
-./bin/mac-cleanup-studio recommend --profile all
-./bin/mac-cleanup-studio recommend --rules user-caches,developer-caches --json
+./bin/oli capabilities --json
+./bin/oli recommend --profile all
+./bin/oli recommend --rules user-caches,developer-caches --json
 ```
 
 Review the same selection through a clean dry run. Omitting `--apply` means no
 files are deleted:
 
 ```sh
-./bin/mac-cleanup-studio clean --profile safe
+./bin/oli clean --profile safe
 ```
 
 Only after reviewing that output, apply the cleanup explicitly:
 
 ```sh
-./bin/mac-cleanup-studio clean --profile safe --apply --yes
+./bin/oli clean --profile safe --apply --yes
 ```
 
 `--apply` without `--yes`, or `--yes` without `--apply`, fails instead of
@@ -205,10 +215,10 @@ The auto profile follows the same dry-run/apply boundary:
 
 ```sh
 # Preview old, allowlisted safe data.
-./bin/mac-cleanup-studio auto
+./bin/oli auto
 
 # Permanently delete that profile after reviewing the preview.
-./bin/mac-cleanup-studio auto --apply --yes
+./bin/oli auto --apply --yes
 ```
 
 Here, `auto` means automatic selection of the fixed safe profile. It does not
@@ -218,7 +228,7 @@ unless both apply flags are supplied.
 For a narrower preview, pass a comma-separated rule selection:
 
 ```sh
-./bin/mac-cleanup-studio clean --rules user-caches,user-logs
+./bin/oli clean --rules user-caches,user-logs
 ```
 
 Use `--json` with `capabilities`, `scan`, `recommend`, `clean`, or `auto` when
@@ -231,7 +241,7 @@ and a safe integration flow.
 Launch the optional local dashboard explicitly:
 
 ```sh
-./bin/mac-cleanup-studio dashboard
+./bin/oli dashboard
 ```
 
 Running the binary with no arguments prints help and performs no scan or
@@ -241,7 +251,7 @@ By default it binds to an ephemeral port on `127.0.0.1` and opens the browser.
 For terminal-only environments:
 
 ```sh
-./bin/mac-cleanup-studio dashboard --no-open --listen 127.0.0.1:0
+./bin/oli dashboard --no-open --listen 127.0.0.1:0
 ```
 
 The UI offers Safe, Balanced, and Full Review scan profiles. Safe covers old
@@ -267,7 +277,7 @@ address bar after loading. Do not expose the listener or share its launch URL.
 | `version` | Print version information | No |
 | `help` | Print the current command usage | No |
 
-Run `./bin/mac-cleanup-studio help` for the usage supported by the checked-out
+Run `./bin/oli help` for the usage supported by the checked-out
 version. `scan` defaults to the all profile, `clean` defaults to safe, an
 explicit `--rules` list overrides profile selection, and `auto` is always the
 fixed safe profile.

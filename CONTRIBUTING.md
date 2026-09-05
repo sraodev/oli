@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for helping make Mac Cleanup Studio safer and clearer.
+Thank you for helping make Oli safer and clearer.
 
 ## Before opening a pull request
 
@@ -12,7 +12,7 @@ gofmt -w .
 go vet ./...
 go test -race ./...
 mkdir -p ./bin
-go build -trimpath -o ./bin/mac-cleanup-studio ./cmd/mac-cleanup-studio
+go build -trimpath -o ./bin/oli ./cmd/oli
 ```
 
 Or run `make check`.

@@ -1,7 +1,7 @@
 # Build and test output
 /bin/
 /dist/
-/mac-cleanup-studio
+/oli
 *.test
 *.out
 coverage.*

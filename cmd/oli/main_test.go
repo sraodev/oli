@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
-	"github.com/sraodev/mac-cleanup-studio/internal/cli"
+	"github.com/sraodev/oli/internal/cleanup"
+	"github.com/sraodev/oli/internal/cli"
 )
 
 func TestRunHelpAndVersionDoNotInitializeFilesystem(t *testing.T) {
@@ -21,9 +21,9 @@ func TestRunHelpAndVersionDoNotInitializeFilesystem(t *testing.T) {
 		args []string
 		want string
 	}{
-		{args: nil, want: "preview-first macOS cleanup"},
-		{args: []string{"help"}, want: "preview-first macOS cleanup"},
-		{args: []string{"version"}, want: "mac-cleanup-studio"},
+		{args: nil, want: "Oli — Open Lifecycle Intelligence"},
+		{args: []string{"help"}, want: "oli dashboard"},
+		{args: []string{"version"}, want: "oli dev (commit unknown, built unknown)"},
 	} {
 		var stdout, stderr bytes.Buffer
 		if code := run(context.Background(), test.args, &stdout, &stderr); code != 0 {
@@ -31,6 +31,9 @@ func TestRunHelpAndVersionDoNotInitializeFilesystem(t *testing.T) {
 		}
 		if !strings.Contains(stdout.String(), test.want) {
 			t.Fatalf("run(%q) output = %q, want %q", test.args, stdout.String(), test.want)
+		}
+		if strings.Contains(stdout.String(), "mac-cleanup-studio") {
+			t.Fatalf("run(%q) still advertises the old executable", test.args)
 		}
 	}
 }
@@ -49,6 +52,7 @@ func TestCapabilitiesJSONPublishesSafetyContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	var document struct {
+		Product       string `json:"product"`
 		SchemaVersion string `json:"schema_version"`
 		Rules         []struct {
 			ID    string   `json:"id"`
@@ -62,6 +66,9 @@ func TestCapabilitiesJSONPublishesSafetyContract(t *testing.T) {
 	}
 	if err := json.Unmarshal(output.Bytes(), &document); err != nil {
 		t.Fatal(err)
+	}
+	if document.Product != "oli" || document.SchemaVersion != "mac-cleanup-studio/v1" {
+		t.Fatalf("rename changed brand or wire compatibility: %+v", document)
 	}
 	if document.SchemaVersion != schemaVersion || len(document.Rules) != 1 || document.Rules[0].ID != "test" {
 		t.Fatalf("unexpected capabilities: %+v", document)

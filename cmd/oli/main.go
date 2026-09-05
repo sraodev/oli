@@ -20,10 +20,10 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/app"
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
-	"github.com/sraodev/mac-cleanup-studio/internal/cli"
-	"github.com/sraodev/mac-cleanup-studio/internal/dashboard"
+	"github.com/sraodev/oli/internal/app"
+	"github.com/sraodev/oli/internal/cleanup"
+	"github.com/sraodev/oli/internal/cli"
+	"github.com/sraodev/oli/internal/dashboard"
 )
 
 var (
@@ -32,6 +32,7 @@ var (
 	buildDate = "unknown"
 )
 
+// Keep the existing wire identifier: a product rename is not a schema revision.
 const schemaVersion = "mac-cleanup-studio/v1"
 
 func main() {
@@ -51,11 +52,11 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	if opts.Command == cli.CommandVersion {
-		fmt.Fprintf(stdout, "mac-cleanup-studio %s (commit %s, built %s)\n", version, commit, buildDate)
+		fmt.Fprintf(stdout, "oli %s (commit %s, built %s)\n", version, commit, buildDate)
 		return 0
 	}
 	if runtime.GOOS != "darwin" {
-		fmt.Fprintln(stderr, "Error: Mac Cleanup Studio currently supports macOS only.")
+		fmt.Fprintln(stderr, "Error: Oli currently supports macOS only.")
 		return 1
 	}
 
@@ -117,7 +118,7 @@ func runDashboard(ctx context.Context, opts cli.Options, engine *cleanup.Engine,
 	defer listener.Close()
 
 	launchURL := dashboardURL(listener.Addr(), token)
-	fmt.Fprintf(stdout, "Mac Cleanup Studio is running locally.\nDashboard: %s\nPress Ctrl+C to stop.\n", launchURL)
+	fmt.Fprintf(stdout, "Oli is running locally.\nDashboard: %s\nPress Ctrl+C to stop.\n", launchURL)
 	if !opts.NoOpen {
 		if err := exec.Command("open", launchURL).Start(); err != nil {
 			fmt.Fprintf(stderr, "Could not open the browser automatically: %v\n", err)
@@ -227,7 +228,7 @@ func runCapabilities(opts cli.Options, engine *cleanup.Engine, output io.Writer)
 		ExitCodes         map[string]int         `json:"exit_codes"`
 	}{
 		SchemaVersion:     schemaVersion,
-		Product:           "mac-cleanup-studio",
+		Product:           "oli",
 		Version:           version,
 		Commit:            commit,
 		BuildDate:         buildDate,
@@ -248,7 +249,7 @@ func runCapabilities(opts cli.Options, engine *cleanup.Engine, output io.Writer)
 	if opts.JSON {
 		return writeJSON(output, document)
 	}
-	fmt.Fprintf(output, "Mac Cleanup Studio %s — agent-agnostic CLI contract %s\n\n", version, schemaVersion)
+	fmt.Fprintf(output, "Oli %s — agent-agnostic CLI contract %s\n\n", version, schemaVersion)
 	table := tabwriter.NewWriter(output, 0, 4, 2, ' ', 0)
 	fmt.Fprintln(table, "COMMAND\tREAD ONLY\tJSON\tPURPOSE")
 	for _, command := range commands {
@@ -294,7 +295,7 @@ func runRecommend(ctx context.Context, opts cli.Options, engine *cleanup.Engine,
 			Recommendations: recommendations, SuggestedRuleIDs: suggested, Warnings: scan.Warnings,
 		})
 	}
-	fmt.Fprintf(output, "Mac Cleanup Studio — deterministic recommendations\nAvailable: %s of %s | Scan: %s\n\n",
+	fmt.Fprintf(output, "Oli — deterministic recommendations\nAvailable: %s of %s | Scan: %s\n\n",
 		cleanup.FormatBytes(volume.AvailableBytes), cleanup.FormatBytes(volume.TotalBytes), scan.ID)
 	table := tabwriter.NewWriter(output, 0, 4, 2, ' ', 0)
 	fmt.Fprintln(table, "CATEGORY\tRISK\tDECISION\tRECLAIMABLE\tDETECTED\tWHY")
@@ -305,7 +306,7 @@ func runRecommend(ctx context.Context, opts cli.Options, engine *cleanup.Engine,
 	}
 	_ = table.Flush()
 	if len(suggested) > 0 {
-		fmt.Fprintf(output, "\nSuggested dry run: mac-cleanup-studio clean --rules %s\n", strings.Join(suggested, ","))
+		fmt.Fprintf(output, "\nSuggested dry run: oli clean --rules %s\n", strings.Join(suggested, ","))
 	} else {
 		fmt.Fprintln(output, "\nNo low-risk rules currently qualify for the suggested dry run.")
 	}
@@ -422,7 +423,7 @@ func runCleanup(ctx context.Context, opts cli.Options, engine *cleanup.Engine, h
 }
 
 func printScan(output io.Writer, scan *cleanup.Scan, volume cleanup.VolumeInfo, title string, showPlan bool) {
-	fmt.Fprintf(output, "Mac Cleanup Studio — %s\n", title)
+	fmt.Fprintf(output, "Oli — %s\n", title)
 	fmt.Fprintf(output, "Available: %s of %s | Scan: %s\n\n",
 		cleanup.FormatBytes(volume.AvailableBytes), cleanup.FormatBytes(volume.TotalBytes), scan.ID)
 

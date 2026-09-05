@@ -1,6 +1,6 @@
 # Agent interface
 
-Mac Cleanup Studio is agent-agnostic because its public automation boundary is
+Oli is agent-agnostic because its public automation boundary is
 a local executable with versioned JSON. It requires no hosted service, model,
 SDK, MCP server, or vendor-specific plugin.
 
@@ -9,7 +9,7 @@ SDK, MCP server, or vendor-specific plugin.
 Start every integration by reading the compiled capabilities:
 
 ```sh
-mac-cleanup-studio capabilities --json
+oli capabilities --json
 ```
 
 The document publishes `schema_version`, build identity, commands, profiles,
@@ -19,6 +19,19 @@ exposed.
 
 The current schema identifier is `mac-cleanup-studio/v1`. Consumers should
 reject unknown major identifiers instead of guessing at their meaning.
+
+## Rename compatibility
+
+Oli means **Open Lifecycle Intelligence**. Invoke `oli` instead of
+`mac-cleanup-studio`; capabilities now identifies the product as `oli`.
+The schema identifier intentionally remains `mac-cleanup-studio/v1`.
+Fields, rule IDs, exit codes, command flags and deletion gates are unchanged.
+Consumers should negotiate the schema, not infer compatibility from the brand.
+
+The dashboard uses the `oli-token` session-storage key and `oli` authentication
+realm. Launch a fresh dashboard session after upgrading; old stored tokens are
+not migrated or accepted as new authority. No existing data or binaries are
+automatically renamed, removed or replaced.
 
 ## Read-only storage discovery
 
@@ -55,9 +68,9 @@ of a completed report. No file contents are opened for inspection.
 Example:
 
 ```sh
-mac-cleanup-studio recommend --profile safe --json
-mac-cleanup-studio clean --rules user-caches,user-logs --json
-mac-cleanup-studio clean --rules user-caches,user-logs --apply --yes --json
+oli recommend --profile safe --json
+oli clean --rules user-caches,user-logs --json
+oli clean --rules user-caches,user-logs --apply --yes --json
 ```
 
 No command accepts an arbitrary filesystem path. Agents can select only

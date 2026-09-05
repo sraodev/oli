@@ -13,7 +13,7 @@ limits. Logical and allocated totals are estimates, not reclaimable sizes.
 Old modification timestamps do not prove that a file is unused. Files inside
 app bundles and libraries should be managed with their owning application.
 
-Mac Cleanup Studio removes files only after a visible scan and review boundary.
+Oli removes files only after a visible scan and review boundary.
 This document describes what that boundary means and what it cannot guarantee.
 
 ## Destructive-action warning
@@ -153,7 +153,7 @@ running on an unattended account.
 
 ## Privacy and networking
 
-Mac Cleanup Studio does not send scan paths, sizes, selections, or cleanup
+Oli does not send scan paths, sizes, selections, or cleanup
 results to a remote service and has no telemetry. Scanning and deletion do not
 require external network access. The only dashboard traffic is between the
 browser and the loopback listener on the same Mac.
