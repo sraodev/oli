@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private vulnerability report
+    url: https://github.com/sraodev/oli/security/advisories/new
+    about: Report security flaws or unintended deletion privately.
+  - name: Usage questions
+    url: https://github.com/sraodev/oli/discussions
+    about: Ask for help without sharing personal scan data.

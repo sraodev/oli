@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="945" viewBox="0 0 1440 945" role="img" aria-labelledby="title desc">
+  <title id="title">Oli readiness &#x2014; contribution to protected merge</title>
+  <desc id="desc">Delivery sequence for this PR, not a new cleanup execution or agent lifecycle protocol.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L9,5 L0,10 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="1440" height="945" fill="#fff"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="48" y="62" font-size="34" font-weight="700" fill="#0f172a">Oli readiness &#x2014; contribution to protected merge</text>
+    <text x="48" y="98" font-size="18" font-weight="400" fill="#475569">Delivery sequence for this PR, not a new cleanup execution or agent lifecycle protocol.</text>
+    <rect x="62" y="150" width="236" height="52" rx="9" fill="#eff6ff" stroke="#2563eb"/>
+    <text x="80" y="184" font-size="20" font-weight="700" fill="#0f172a">Contributor</text>
+    <path d="M180 202 L180 805" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="7 7"/>
+    <rect x="422" y="150" width="236" height="52" rx="9" fill="#eff6ff" stroke="#2563eb"/>
+    <text x="440" y="184" font-size="20" font-weight="700" fill="#0f172a">Repository / PR</text>
+    <path d="M540 202 L540 805" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="7 7"/>
+    <rect x="782" y="150" width="236" height="52" rx="9" fill="#eff6ff" stroke="#2563eb"/>
+    <text x="800" y="184" font-size="20" font-weight="700" fill="#0f172a">CI checks</text>
+    <path d="M900 202 L900 805" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="7 7"/>
+    <rect x="1142" y="150" width="236" height="52" rx="9" fill="#eff6ff" stroke="#2563eb"/>
+    <text x="1160" y="184" font-size="20" font-weight="700" fill="#0f172a">Maintainer</text>
+    <path d="M1260 202 L1260 805" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="7 7"/>
+    <path d="M 180 250 L 540 250" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="194" y="238" font-size="16" font-weight="500" fill="#334155">1. Push docs, workflows and review assets</text>
+    <path d="M 540 325 L 900 325" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="554" y="313" font-size="16" font-weight="500" fill="#334155">2. Existing PR / push triggers run CI</text>
+    <path d="M 900 400 L 540 400" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="554" y="388" font-size="16" font-weight="500" fill="#334155">3. Format, race tests, vet, Darwin builds</text>
+    <path d="M 1260 475 L 540 475" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="554" y="463" font-size="16" font-weight="500" fill="#334155">4. Review scope, evidence and diagrams; resolve conversations</text>
+    <rect x="58" y="523" width="1324" height="79" rx="10" fill="#fffbeb" stroke="#b45309"/>
+    <text x="80" y="553" font-size="14" font-weight="700" fill="#b45309">IF CHECKS FAIL OR THE BRANCH IS STALE</text>
+    <text x="80" y="581" font-size="18" font-weight="400" fill="#475569">Fix the scoped problem and rerun. Never use an admin bypass to substitute for passing checks.</text>
+    <path d="M 540 658 L 1260 658" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="554" y="646" font-size="16" font-weight="500" fill="#334155">5. Present green checks and reviewed scope (not release acceptance)</text>
+    <path d="M 1260 735 L 540 735" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="554" y="723" font-size="16" font-weight="500" fill="#334155">6. Merge only after explicit authorization and satisfied protection</text>
+    <rect x="48" y="835" width="1344" height="82" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="68" y="865" font-size="18" font-weight="700" fill="#0f172a">AFTER MERGE: default-branch docs / forms become available; verify readback.</text>
+    <text x="68" y="893" font-size="17" font-weight="400" fill="#475569">A matching version-tag push publishes via the existing release workflow. No tag or release is created here.</text>
+  </g>
+</svg>

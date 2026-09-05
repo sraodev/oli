@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="850" viewBox="0 0 1440 850" role="img" aria-labelledby="title desc">
+  <title id="title">Oli repository readiness &#x2014; reviewer roadmap</title>
+  <desc id="desc">Verified built / partial / planned / deferred: status labels describe evidence, not a promise of completion.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L9,5 L0,10 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="1440" height="850" fill="#fff"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="48" y="62" font-size="34" font-weight="700" fill="#0f172a">Oli repository readiness &#x2014; reviewer roadmap</text>
+    <text x="48" y="98" font-size="18" font-weight="400" fill="#475569">Verified built / partial / planned / deferred: status labels describe evidence, not a promise of completion.</text>
+    <text x="48" y="153" font-size="15" font-weight="700" fill="#475569">BASELINE &#x2014; VERIFIED ON 2026-09-06</text>
+    <g>
+      <rect x="48" y="175" width="420" height="142" rx="12" fill="#ecfdf5" stroke="#15803d" stroke-width="2"/>
+      <text x="66" y="203" font-size="12" font-weight="700" fill="#15803d">BUILT</text>
+      <text x="66" y="235" font-size="22" font-weight="700" fill="#0f172a">Merged runtime</text>
+      <text x="66" y="263" font-size="17" font-weight="400" fill="#475569">CLI / JSON / dashboard / Atlas</text>
+      <text x="66" y="287" font-size="17" font-weight="400" fill="#475569">Rename #43 &#xB7; main c74b5b9</text>
+      <text x="66" y="311" font-size="17" font-weight="400" fill="#475569">Source evidence, not a binary release</text>
+    </g>
+    <g>
+      <rect x="510" y="175" width="420" height="142" rx="12" fill="#ecfdf5" stroke="#15803d" stroke-width="2"/>
+      <text x="528" y="203" font-size="12" font-weight="700" fill="#15803d">BUILT</text>
+      <text x="528" y="235" font-size="22" font-weight="700" fill="#0f172a">Repository controls</text>
+      <text x="528" y="263" font-size="17" font-weight="400" fill="#475569">Protected main; required checks</text>
+      <text x="528" y="287" font-size="17" font-weight="400" fill="#475569">Private vulnerability reporting</text>
+      <text x="528" y="311" font-size="17" font-weight="400" fill="#475569">Live settings, not code in this PR</text>
+    </g>
+    <g>
+      <rect x="972" y="175" width="420" height="142" rx="12" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
+      <text x="990" y="203" font-size="12" font-weight="700" fill="#b45309">PARTIAL</text>
+      <text x="990" y="235" font-size="22" font-weight="700" fill="#0f172a">Contributor experience</text>
+      <text x="990" y="263" font-size="17" font-weight="400" fill="#475569">Existing safety and agent docs</text>
+      <text x="990" y="287" font-size="17" font-weight="400" fill="#475569">New readiness work still in review</text>
+      <text x="990" y="311" font-size="17" font-weight="400" fill="#475569">One maintainer; no two-person gate</text>
+    </g>
+    <text x="48" y="368" font-size="15" font-weight="700" fill="#475569">THIS PR &#x2014; REVIEW LEFT TO RIGHT</text>
+    <g>
+      <rect x="48" y="390" width="420" height="165" rx="12" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
+      <text x="66" y="418" font-size="12" font-weight="700" fill="#b45309">PARTIAL</text>
+      <text x="66" y="450" font-size="22" font-weight="700" fill="#0f172a">1. Scope and truthful docs</text>
+      <text x="66" y="478" font-size="17" font-weight="400" fill="#475569">README &#x2192; usage &#x2192; roadmap</text>
+      <text x="66" y="502" font-size="17" font-weight="400" fill="#475569">Current behavior vs planned lifecycle</text>
+      <text x="66" y="526" font-size="17" font-weight="400" fill="#475569">No unsupported installer commands</text>
+    </g>
+    <g>
+      <rect x="510" y="390" width="420" height="165" rx="12" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
+      <text x="528" y="418" font-size="12" font-weight="700" fill="#b45309">PARTIAL</text>
+      <text x="528" y="450" font-size="22" font-weight="700" fill="#0f172a">2. GitHub workflow hygiene</text>
+      <text x="528" y="478" font-size="17" font-weight="400" fill="#475569">Pinned actions; no persisted credentials</text>
+      <text x="528" y="502" font-size="17" font-weight="400" fill="#475569">Issue forms, CODEOWNERS, Dependabot</text>
+      <text x="528" y="526" font-size="17" font-weight="400" fill="#475569">Existing job names and triggers retained</text>
+    </g>
+    <g>
+      <rect x="972" y="390" width="420" height="165" rx="12" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
+      <text x="990" y="418" font-size="12" font-weight="700" fill="#b45309">PARTIAL</text>
+      <text x="990" y="450" font-size="22" font-weight="700" fill="#0f172a">3. Verify the review package</text>
+      <text x="990" y="478" font-size="17" font-weight="400" fill="#475569">Scope, sequence, architecture</text>
+      <text x="990" y="502" font-size="17" font-weight="400" fill="#475569">Rendered previews + editable SVG</text>
+      <text x="990" y="526" font-size="17" font-weight="400" fill="#475569">Literal checks; PR CI after push</text>
+    </g>
+    <path d="M 470 470 L 505 470" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M 933 470 L 967 470" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+    <g>
+      <rect x="48" y="595" width="652" height="135" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+      <text x="66" y="623" font-size="12" font-weight="700" fill="#2563eb">PLANNED</text>
+      <text x="66" y="655" font-size="22" font-weight="700" fill="#0f172a">Later delivery: separate issues</text>
+      <text x="66" y="683" font-size="17" font-weight="400" fill="#475569">#8 release &#xB7; #44&#x2013;50 installation/platforms</text>
+      <text x="66" y="707" font-size="17" font-weight="400" fill="#475569">#51 config &#xB7; #53&#x2013;55 agent work &#xB7; #58 low-space</text>
+    </g>
+    <g>
+      <rect x="740" y="595" width="652" height="135" rx="12" fill="#faf5ff" stroke="#7e22ce" stroke-width="2"/>
+      <text x="758" y="623" font-size="12" font-weight="700" fill="#7e22ce">DEFERRED</text>
+      <text x="758" y="655" font-size="22" font-weight="700" fill="#0f172a">Not authorized or shipped here</text>
+      <text x="758" y="683" font-size="17" font-weight="400" fill="#475569">Native / cloud / security modules; autonomous cleanup</text>
+      <text x="758" y="707" font-size="17" font-weight="400" fill="#475569">Social-card upload and release acceptance remain separate</text>
+    </g>
+    <rect x="48" y="752" width="1344" height="82" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="68" y="782" font-size="18" font-weight="700" fill="#0f172a">HARD BOUNDARY: documentation and repository hygiene only.</text>
+    <text x="68" y="810" font-size="17" font-weight="400" fill="#475569">No cleanup-engine, CLI-contract or dashboard runtime changes. No release, installer, daemon or deletion.</text>
+  </g>
+</svg>
