@@ -1,20 +1,29 @@
 <?xml version="1.0"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
-  <title id="title">Oli &#x2014; make room, keep control</title>
-  <desc id="desc">Open Lifecycle Intelligence. Preview-first macOS storage cleanup. Go CLI, JSON, local dashboard. Review before action.</desc>
-  <rect width="1280" height="640" fill="#101914"/>
+  <title id="title">Oli &#x2014; Open Lifecycle Intelligence</title>
+  <desc id="desc">An ASCII rabbit beside the OLI wordmark. Open Lifecycle Intelligence — preview-first macOS cleanup for people, scripts, and local agents. Inspect, decide, verify.</desc>
+  <rect width="1280" height="640" fill="#f5f6f8"/>
   <g font-family="Arial, Helvetica, sans-serif">
-    <text x="76" y="148" fill="#b8f780" font-size="100" font-weight="700">oli</text>
-    <text x="80" y="205" fill="#d7e8dd" font-size="23">OPEN LIFECYCLE INTELLIGENCE</text>
-    <text x="76" y="318" fill="#ffffff" font-size="60" font-weight="700">Make room.</text>
-    <text x="76" y="391" fill="#ffffff" font-size="60" font-weight="700">Keep control.</text>
-    <text x="80" y="466" fill="#c1d1c6" font-size="26">Preview-first macOS storage cleanup.</text>
-    <text x="80" y="541" fill="#b8f780" font-size="21">GO CLI  /  JSON  /  LOCAL DASHBOARD</text>
-    <rect x="830" y="180" width="360" height="286" rx="24" fill="#1a2d21" stroke="#618c4e" stroke-width="2"/>
-    <text x="862" y="235" fill="#b8f780" font-size="18">REVIEW BEFORE ACTION</text>
-    <text x="862" y="300" fill="#ffffff" font-size="28">Inspect.</text>
-    <text x="862" y="352" fill="#ffffff" font-size="28">Decide.</text>
-    <text x="862" y="404" fill="#ffffff" font-size="28">Verify.</text>
-    <text x="860" y="550" fill="#c1d1c6" font-size="20">github.com/sraodev/oli</text>
+    <g font-family="Menlo, monospace" font-size="27" fill="#303641" xml:space="preserve">
+      <text x="80" y="108">          ,\</text>
+      <text x="80" y="141">          \\\,_       ___  _     ___</text>
+      <text x="80" y="174">           \` ,\     / _ \| |   |_ _|</text>
+      <text x="80" y="207">      __,.-&quot; =__)    | (_) | |__ | |</text>
+      <text x="80" y="240">    .&quot;        )      \___/|____|___|</text>
+      <text x="80" y="273">,_/   ,    \/\_</text>
+      <text x="80" y="306">\_|    )_-\ \_-`</text>
+      <text x="80" y="339">   `-----` `--`</text>
+    </g>
+    <text x="80" y="422" fill="#20252d" font-size="42" font-weight="700">Open Lifecycle Intelligence</text>
+    <text x="80" y="471" fill="#505966" font-size="28">preview-first macOS cleanup for people,</text>
+    <text x="80" y="509" fill="#505966" font-size="28">scripts, and local agents.</text>
+    <rect x="830" y="108" width="360" height="238" rx="24" fill="#e5e8ed" stroke="#bfc6cf" stroke-width="2"/>
+    <text x="862" y="156" fill="#505966" font-size="18">REVIEW BEFORE ACTION</text>
+    <text x="862" y="214" fill="#20252d" font-size="28">Inspect.</text>
+    <text x="862" y="264" fill="#20252d" font-size="28">Decide.</text>
+    <text x="862" y="314" fill="#20252d" font-size="28">Verify.</text>
+    <path d="M80 552H1190" stroke="#cdd2da"/>
+    <text x="80" y="590" fill="#505966" font-size="18">GO CLI  /  JSON  /  LOCAL DASHBOARD</text>
+    <text x="1190" y="590" text-anchor="end" fill="#505966" font-size="20">github.com/sraodev/oli</text>
   </g>
 </svg>
