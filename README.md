@@ -1,5 +1,19 @@
 # Oli
 
+```text
+      ,\
+      \\\,_       ___  _     ___
+       \` ,\     / _ \| |   |_ _|
+  __,.-" =__)    | (_) | |__ | |
+."        )      \___/|____|___|
+,*/   ,    /\_
+\_|    )*-\ \_-`     Open Lifecycle Intelligence
+   `-----` `--\`     preview-first macOS cleanup for people,
+                    scripts, and local agents
+
+                    github.com/sraodev/oli
+```
+
 **Your machine’s housekeeper.**
 
 Open Lifecycle Intelligence — preview-first macOS cleanup for people, scripts, and local agents.
@@ -28,6 +42,27 @@ workspace policies and low-space recommendations that protect active work.
 Those capabilities are [planned](ROADMAP.md#agent-housekeeping), not enabled
 autonomy. Reliable workspaces are the goal; faster agents must be demonstrated
 with measurements, not assumed from deleting caches.
+
+## Lifecycle vision and your use case
+
+Oli's long-term vision is an **Open Lifecycle Intelligence framework** for
+coordinating end-to-end housekeeping across software systems. Data pipelines,
+enterprise lifecycles and centralized management are potential future
+applications—not capabilities of the current local macOS tool. Each expansion
+needs its own architecture, ownership, consent and safety review.
+
+When proposing an integration or asking for guidance, tell us:
+
+- **Which ecosystem are you working in?** For example, local AI-agent workflows,
+  DevOps, MLOps or data governance.
+- **What is your primary bottleneck?** For example, disk-space pressure,
+  automated cleanup, asset tracking or cost optimization.
+- **What guidance do you need?** Architecture overviews, deployment steps or
+  configuration examples?
+
+Share your context through [Support](SUPPORT.md), without credentials or private
+scan data. These questions help scope proposals; they do not imply that Oli
+already supports every ecosystem or grants permission to clean its resources.
 
 ## Know what takes space. Decide what goes.
 
