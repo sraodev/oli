@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Oli &#x2014; make room, keep control</title>
+  <desc id="desc">Open Lifecycle Intelligence. Preview-first macOS storage cleanup. Go CLI, JSON, local dashboard. Review before action.</desc>
+  <rect width="1280" height="640" fill="#101914"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="76" y="148" fill="#b8f780" font-size="100" font-weight="700">oli</text>
+    <text x="80" y="205" fill="#d7e8dd" font-size="23">OPEN LIFECYCLE INTELLIGENCE</text>
+    <text x="76" y="318" fill="#ffffff" font-size="60" font-weight="700">Make room.</text>
+    <text x="76" y="391" fill="#ffffff" font-size="60" font-weight="700">Keep control.</text>
+    <text x="80" y="466" fill="#c1d1c6" font-size="26">Preview-first macOS storage cleanup.</text>
+    <text x="80" y="541" fill="#b8f780" font-size="21">GO CLI  /  JSON  /  LOCAL DASHBOARD</text>
+    <rect x="830" y="180" width="360" height="286" rx="24" fill="#1a2d21" stroke="#618c4e" stroke-width="2"/>
+    <text x="862" y="235" fill="#b8f780" font-size="18">REVIEW BEFORE ACTION</text>
+    <text x="862" y="300" fill="#ffffff" font-size="28">Inspect.</text>
+    <text x="862" y="352" fill="#ffffff" font-size="28">Decide.</text>
+    <text x="862" y="404" fill="#ffffff" font-size="28">Verify.</text>
+    <text x="860" y="550" fill="#c1d1c6" font-size="20">github.com/sraodev/oli</text>
+  </g>
+</svg>

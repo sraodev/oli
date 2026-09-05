@@ -11,6 +11,13 @@ Use verified issue/commit references; do not imply that proposed work is built.
 For a small change, keep the diagram small rather than omitting it.
 Example: docs/diagrams/pr-33-reviewer-roadmap.svg -->
 
+## Attached review documents
+
+<!-- For multi-part changes, link a checked-in scope document with included and
+excluded work, ordered source links, invariants, failures and remaining gates.
+For workflow/architecture changes, embed sequence and architecture previews and
+link their editable sources. Keep small changes proportionate. -->
+
 ## End-to-end verification
 
 <!-- Run relevant end-to-end flows with synthetic fixtures. Include environment,

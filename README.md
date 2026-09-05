@@ -1,298 +1,144 @@
 # Oli
 
-**Open Lifecycle Intelligence — your machine’s housekeeper.**
+**Your machine’s housekeeper.**
 
-A CLI-first, agent-agnostic, interactive macOS cleanup tool that shows what
-could be removed, how much space it represents, and why each item is eligible
-before anything is deleted.
+Open Lifecycle Intelligence — preview-first macOS cleanup for people, scripts, and local agents.
+
+[![CI](https://github.com/sraodev/oli/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sraodev/oli/actions/workflows/ci.yml)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+[Get started](#try-oli) · [User guide](docs/guides/usage.md) · [Agent contract](docs/agent-interface.md) · [Roadmap](ROADMAP.md) · [Contribute](CONTRIBUTING.md)
+
+![Oli: make room, keep control. Local macOS cleanup with CLI and JSON, explicit review, and no cloud account.](docs/assets/oli-social.png)
+
+## What is Oli?
+
+Oli (**Open Lifecycle Intelligence**) is a local-first housekeeping project for
+developer workspaces and AI-agent workflows. Its goal is to make resource use
+understandable: what is taking space, what can be regenerated, what must be
+protected, and what an explicitly approved cleanup actually changed.
+
+Today, Oli addresses **disk-space pressure on macOS** through a Go CLI,
+versioned JSON and a local dashboard. It is intended for developers and local
+automation—not a centralized enterprise manager, cloud data-governance platform
+or replacement for the operating system's memory management.
+
+The next stage is lifecycle-aware housekeeping: bounded agent integration,
+workspace policies and low-space recommendations that protect active work.
+Those capabilities are [planned](ROADMAP.md#agent-housekeeping), not enabled
+autonomy. Reliable workspaces are the goal; faster agents must be demonstrated
+with measurements, not assumed from deleting caches.
+
+## Know what takes space. Decide what goes.
+
+Caches and build leftovers grow while you work. Oli measures eligible data,
+explains the rules, and lets you review the cleanup before applying it.
+It runs locally as one Go binary, with an optional browser dashboard.
+
+- **See the numbers:** logical bytes, allocated-byte estimates, and observed free-space change are separate.
+- **Inspect personal folders:** Storage Atlas ranks folder sizes and large/old files without deleting them.
+- **Keep control:** compiled user-scoped rules, age gates, fresh-plan validation, and explicit confirmation.
+- **Call it from your tools:** versioned JSON and exit codes; no model-specific SDK or hosted service.
 
 > [!WARNING]
-> An applied cleanup deletes files directly. It does **not** move them to the
-> Trash, and the deletion may not be recoverable. Scan and review the exact
-> paths before using CLI `--apply --yes` or typing `DELETE` in the dashboard.
+> Oli is early-stage software. Applied cleanup permanently deletes files; it
+> does **not** move them to Trash or provide recovery. Review exact paths and
+> read the [safety model](docs/safety.md) before applying anything.
 
-Oli is an early-stage, macOS-only project. It builds as one
-standard-library Go binary, operates only within the current user's home, and
-does not ask for `sudo`.
+## Try Oli
 
-## Why this project
+**Source build first.** No downloadable Oli release, supported curl installer,
+or package-manager installation is currently published. Track distribution in
+[issue #8](https://github.com/sraodev/oli/issues/8).
 
-Many cleanup scripts combine discovery and deletion in one opaque operation.
-Oli keeps three boundaries visible:
-
-1. **Scan** is read-only and records logical bytes plus an allocated-byte
-   reclaimable estimate.
-2. **Review** shows the rules, paths, item counts, ages, errors, and estimated
-   reclaimable space. A clean command without `--apply` is also a dry run.
-3. **Clean** permanently deletes only the selected rules from a fresh,
-   revalidated scan. The CLI requires both `--apply` and `--yes`; the dashboard
-   requires typing `DELETE` for the completed scan.
-
-The project is an independent implementation with a deliberately scoped
-cleanup policy.
-
-The local dashboard is intended to make those boundaries hard to miss. It
-shows disk usage, scanned/reclaimable/selected bytes, per-rule risk and age,
-largest candidates, scan errors, and the estimate-versus-measured result of an
-applied cleanup.
-
-The CLI is the canonical interface. Its versioned JSON works with shell
-scripts, CI, local agents, and other tools without an SDK or vendor-specific
-plugin. Recommendations are deterministic policy decisions based on compiled
-rules, risk, age, and measured size—not an LLM choosing files to delete.
-
-## Safety boundaries
-
-- Scans and cleanup are user-scoped. System locations and other users' data
-  are outside the cleanup boundary.
-- The safe/auto profile only considers allowlisted low-risk data older than its
-  rule-specific cutoff: 30 days for user caches and logs, and 7 days for Xcode
-  DerivedData. Developer caches have a 30-day review cutoff but are not part of
-  automatic cleanup.
-- `~/Downloads` and Docker data are not cleanup targets.
-- Backups and archives may be reported for manual review, but are not deleted
-  by cleanup rules and are never included in the auto profile.
-- Trash remains a separate, cautionary manual action; it is not part of auto
-  cleanup.
-- Scanning and cleanup make no external network requests and collect no
-  telemetry. The dashboard uses a loopback-only local HTTP connection and
-  ships no remote fonts, scripts, or other assets.
-- The tool does not elevate privileges. A permission error is reported rather
-  than bypassed.
-- Applied deletion is descriptor-relative through Go's traversal-resistant
-  `os.Root` API, preventing ancestor symlink swaps from escaping a rule root.
-
-See [the full safety model](docs/safety.md) before applying a cleanup.
-
-### Built-in rule contract
-
-| Rule ID | Scope | Action | Minimum age | Auto? |
-| --- | --- | --- | ---: | :---: |
-| `user-caches` | Direct children of `~/Library/Caches` | Clean, low risk | 30 days | Yes |
-| `user-logs` | Direct children of `~/Library/Logs` | Clean, low risk | 30 days | Yes |
-| `xcode-derived-data` | `~/Library/Developer/Xcode/DerivedData` | Clean, low risk | 7 days | Yes |
-| `developer-caches` | Gradle, npm, and Go download caches | Clean, caution | 30 days | No |
-| `trash` | The current user's Trash | Clean, caution | None | No |
-| `xcode-archives` | Xcode archives | Report only | N/A | No |
-| `ios-device-backups` | MobileSync backups | Report only | N/A | No |
-
-"Report only" rules can explain disk use but cannot be selected for deletion.
-
-## APFS size estimates are estimates
-
-The scanner records two different numbers. Logical bytes are the apparent file
-sizes; allocated bytes are the filesystem blocks attributed to those files at
-scan time. Hard-linked files are counted once. The dashboard uses allocated
-bytes for its estimated-reclaimable headline, while JSON output exposes both.
-That makes the estimate more useful, but it is still not a promise about the
-number of bytes macOS will make available.
-
-APFS compression, copy-on-write clones, sparse files, hard links, snapshots,
-purgeable space, and files changing between scan and deletion can all make the
-physical result different. After an applied cleanup, treat the measured change
-in free space as the result, while remembering that macOS and snapshots can
-delay visible reclamation.
-
-## Build from source
-
-The project and CLI have been renamed to **Oli**. The executable is `oli`,
-the Go command is `./cmd/oli`, and the repository is `sraodev/oli`.
-Update scripts that invoke the old executable name; no compatibility executable
-is installed automatically. Existing binaries and local data are not moved or
-deleted. The JSON `schema_version` retains its existing identifier so a brand
-change does not silently revise the automation contract; see
-[agent compatibility](docs/agent-interface.md#rename-compatibility).
-
-Requirements:
-
-- macOS
-- the Go version declared in `go.mod`
+Requires macOS and the Go version declared in [go.mod](go.mod).
+From a reviewed checkout:
 
 ```sh
 git clone https://github.com/sraodev/oli.git
 cd oli
-go test ./...
-mkdir -p ./bin
-go build -trimpath -o ./bin/oli ./cmd/oli
+make check
+./bin/oli help
+./bin/oli scan --profile safe
 ```
 
-Run the binary directly:
-
-```sh
-./bin/oli scan
-```
-
-No installer or prebuilt release is required for a source build.
-
-## Storage Atlas: inspect personal files
-
-Find folder sizes, large files, and files not modified recently, without
-creating a cleanup plan:
+The scan is read-only. To inspect personal files or open the local dashboard:
 
 ```sh
 ./bin/oli explore --scope downloads
-./bin/oli explore --scope documents --min-size-mib 250 --older-than-days 365 --json
-```
-
-Scopes are `downloads`, `documents`, `desktop`, `movies`, `music`, `pictures`,
-`applications` (only `~/Applications`), or `all` (these seven scopes, not the
-whole disk). The dashboard has the same inspection capability in **Storage
-Atlas**, with separate folder-size, large-file, and old-file views.
-
-Inspection reads metadata, not file contents. It never follows symlinks or
-provides deletion actions for these personal folders. Hard links count once;
-files that change during inspection and APFS features can affect estimates.
-“Old” means modification age, not last use. Partial scans and skipped areas
-are reported, and list results are bounded rather than exhaustive.
-
-See the [feature coverage and roadmap](docs/feature-parity.md) for what is
-implemented and what remains on the Mac-maintenance roadmap.
-
-## Release binaries
-
-Tagged releases publish separate macOS binaries for Apple Silicon (`arm64`)
-and Intel (`amd64`) as compressed archives, together with `SHA256SUMS`.
-Download the archive for your Mac and verify it before extracting:
-
-```sh
-shasum -a 256 -c SHA256SUMS
-tar -xzf oli-vX.Y.Z-darwin-arm64.tar.gz
-./oli-vX.Y.Z-darwin-arm64/oli version
-```
-
-Release binaries embed their version, commit, and build date. Early community
-builds are not Apple-notarized; users who require a signed/notarized binary
-should build from reviewed source until a project signing identity and
-notarization process are established. Do not bypass macOS security warnings.
-
-Maintainers create a release by pushing an annotated `vX.Y.Z` tag. CI reruns
-the race tests before publishing either architecture.
-
-## Command flow
-
-Start with a read-only scan:
-
-```sh
-./bin/oli scan --profile safe
-./bin/oli scan --profile safe --json
-```
-
-Discover the complete machine-readable contract, then ask for explainable,
-read-only recommendations:
-
-```sh
-./bin/oli capabilities --json
-./bin/oli recommend --profile all
-./bin/oli recommend --rules user-caches,developer-caches --json
-```
-
-Review the same selection through a clean dry run. Omitting `--apply` means no
-files are deleted:
-
-```sh
-./bin/oli clean --profile safe
-```
-
-Only after reviewing that output, apply the cleanup explicitly:
-
-```sh
-./bin/oli clean --profile safe --apply --yes
-```
-
-`--apply` without `--yes`, or `--yes` without `--apply`, fails instead of
-prompting or guessing. `--yes` authorizes a noninteractive operation: the
-applied command performs a new scan, prints that fresh plan immediately before
-deletion in text mode, revalidates it, and continues without another prompt.
-With `--json`, the same fresh scan is included in the final JSON record instead
-of being printed separately. An earlier dry run is useful for review but is not
-the plan object used by a later invocation.
-
-If an applied cleanup is interrupted, candidates already removed remain
-deleted. The command exits nonzero and reports the partial result; interruption
-does not roll back permanent filesystem changes.
-
-The auto profile follows the same dry-run/apply boundary:
-
-```sh
-# Preview old, allowlisted safe data.
-./bin/oli auto
-
-# Permanently delete that profile after reviewing the preview.
-./bin/oli auto --apply --yes
-```
-
-Here, `auto` means automatic selection of the fixed safe profile. It does not
-install a daemon or schedule background cleanup, and it remains a dry run
-unless both apply flags are supplied.
-
-For a narrower preview, pass a comma-separated rule selection:
-
-```sh
-./bin/oli clean --rules user-caches,user-logs
-```
-
-Use `--json` with `capabilities`, `scan`, `recommend`, `clean`, or `auto` when
-another local tool needs machine-readable output. See the
-[agent interface contract](docs/agent-interface.md) for schemas, exit codes,
-and a safe integration flow.
-
-## Dashboard
-
-Launch the optional local dashboard explicitly:
-
-```sh
 ./bin/oli dashboard
 ```
 
-Running the binary with no arguments prints help and performs no scan or
-cleanup.
+No account, subscription, telemetry, or `sudo`. The dashboard uses an
+authenticated loopback connection. Do not share its launch URL.
 
-By default it binds to an ephemeral port on `127.0.0.1` and opens the browser.
-For terminal-only environments:
+## From inspection to action
 
 ```sh
-./bin/oli dashboard --no-open --listen 127.0.0.1:0
+./bin/oli capabilities --json                     # discover the contract
+./bin/oli recommend --profile safe --json           # explain eligible rules
+./bin/oli clean --rules user-caches,user-logs       # dry run only
 ```
 
-The UI offers Safe, Balanced, and Full Review scan profiles. Safe covers old
-user caches, logs, and Xcode rebuild data. Balanced also surfaces developer
-caches and Trash as explicit review choices. Full Review includes the
-report-only findings; report-only rules cannot be selected for cleaning.
+Deletion is a separate decision. The [user guide](docs/guides/usage.md) explains
+confirmation, fresh scans, partial failures, interruption, and estimates.
+A dry run does not authorize a later action.
 
-The dashboard is local, not a hosted service. Its API requires a per-run bearer
-token delivered in the URL fragment; the page removes that fragment from the
-address bar after loading. Do not expose the listener or share its launch URL.
+## What works today?
 
-## Command reference
-
-| Command | Purpose | Deletes by default? |
+| Area | Current source behavior | Boundary |
 | --- | --- | --- |
-| `dashboard [--no-open] [--listen 127.0.0.1:0]` | Open the local interactive dashboard | No |
-| `capabilities [--json]` | Discover commands, rules, profiles, safety flags, and exit codes | No |
-| `explore [--scope downloads\|documents\|desktop\|movies\|music\|pictures\|applications\|all] [--min-size-mib 100] [--older-than-days 180] [--limit 50] [--json]` | Inspect personal-folder sizes and large/old files | Never |
-| `scan [--profile safe\|balanced\|review\|all] [--rules id,...] [--json]` | Calculate and display candidates | No |
-| `recommend [--profile safe\|balanced\|review\|all] [--rules id,...] [--json]` | Explain deterministic cleanup suggestions | No |
-| `clean [--rules id,...] [--profile safe\|balanced\|review\|all] [--apply --yes] [--json]` | Review or explicitly apply a selected cleanup | No |
-| `auto [--apply --yes] [--json]` | Use the fixed old-and-safe profile | No |
-| `version` | Print version information | No |
-| `help` | Print the current command usage | No |
+| Cleanup | Old user caches/logs, Xcode DerivedData, reviewed developer caches, separate Trash rule | Permanent deletion, explicit confirmation |
+| Storage Atlas | Fixed personal-folder scopes, folder ranking, large/old-file lists | Read-only metadata; not full-disk exploration |
+| Automation | CLI, versioned JSON, deterministic recommendations | No autonomous agent hook or lifecycle daemon |
+| Dashboard | Local scan/review, rule selection, Atlas, per-session activity | Not a hosted service or native app |
+| Recovery, TUI, app uninstall, cloud, memory management | Planned or separate unmerged work | Not available in this source branch |
 
-Run `./bin/oli help` for the usage supported by the checked-out
-version. `scan` defaults to the all profile, `clean` defaults to safe, an
-explicit `--rules` list overrides profile selection, and `auto` is always the
-fixed safe profile.
+Oli does not purge RAM, stop your processes, delete personal files automatically,
+or claim to make every agent faster. Its **agent-aware housekeeper direction is
+a roadmap**, not shipped autonomy. See [the feature inventory](ROADMAP.md).
 
-## Project scope
+## Safety is part of the interface
 
-This project is deliberately narrower than a general-purpose disk manager. It
-does not clean macOS system paths, Downloads, Docker, backups, or archives; it
-does not promise that an estimate equals APFS physical reclamation; and it does
-not attempt privileged or cross-user cleanup.
+- Cleanup stays within allowlisted locations in the current user's home.
+- Downloads, Docker data, backups and archives are not automatic cleanup targets.
+- Personal-file inspection never creates deletion authority.
+- Permission errors and incomplete scans are reported, not silently bypassed.
+- APFS clones, snapshots and concurrent writes mean estimated bytes are not a promise of reclaimed capacity.
 
-Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), and
-report deletion-safety or dashboard-authentication flaws using
-[SECURITY.md](SECURITY.md).
+**Disk space is not RAM.** Oli's current cleanup addresses storage; memory-pressure
+inspection and lifecycle-aware process/resource controls require separate work.
+
+## Help build Oli
+
+Start with [good first issues](https://github.com/sraodev/oli/contribute) or
+[help wanted](https://github.com/sraodev/oli/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22help%20wanted%22).
+Tests, accessibility feedback, readable docs, and reproducible Mac compatibility
+reports are valuable contributions—not just new cleanup rules.
+
+Read [Contributing](CONTRIBUTING.md) for setup, small-PR expectations, synthetic
+fixtures, and required reviewer diagrams. Ask questions through [Support](SUPPORT.md);
+report vulnerabilities [privately](https://github.com/sraodev/oli/security/advisories/new).
+
+If Oli is useful to you, a star helps others discover it. A concrete bug report
+or tested contribution helps make it better.
+
+## Find your way around
+
+| Path | Purpose |
+| --- | --- |
+| [cmd/oli](cmd/oli) | Executable, human/JSON output, binary E2E |
+| [internal/cleanup](internal/cleanup) | Scan and deletion safety engine |
+| [internal/app](internal/app) | Profiles, recommendations, dashboard orchestration |
+| [internal/cli](internal/cli) | Argument parsing and usage |
+| [internal/dashboard](internal/dashboard) | Loopback HTTP adapter and embedded UI |
+| [docs](docs/README.md) | User guides, contracts, development and maintainer references |
+
+Upgrading from the previous project name? Use the `oli` executable and
+`github.com/sraodev/oli` module. The existing v1 wire identifier is retained for
+[agent compatibility](docs/agent-interface.md#rename-compatibility); no data or
+installed binary is migrated automatically.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). See the [Code of Conduct](CODE_OF_CONDUCT.md) for community expectations.

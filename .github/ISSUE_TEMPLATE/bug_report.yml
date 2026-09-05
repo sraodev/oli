@@ -1,0 +1,29 @@
+name: Bug report
+description: Report a reproducible problem using synthetic data.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "For security issues or unintended deletion, use private vulnerability reporting. Never paste a dashboard token, launch URL, personal file list or unredacted scan."
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: macOS version, architecture, Oli version or commit.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Synthetic reproduction
+      description: Command, minimal fixture and steps; do not rerun destructive actions on personal files.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Expected and observed behavior
+      description: Include the exit code and a redacted error if available.
+    validations:
+      required: true

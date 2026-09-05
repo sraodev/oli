@@ -12,13 +12,11 @@ Please do not open a public issue for a vulnerability that could cause
 unintended deletion, escape the user-scoped path boundary, expose dashboard
 authorization, bind the dashboard beyond loopback, or disclose scanned paths.
 
-If the repository's **Security** tab offers **Report a vulnerability**, use it
-to create a private report. Otherwise, contact the maintainer through the
-private contact method listed on the
-[`sraodev` GitHub profile](https://github.com/sraodev) and ask for a secure
-reporting channel without including exploit details in the first message. If
-neither option is available, open a public issue that asks only for a private
-contact channel and contains no vulnerability details.
+Use [Report a vulnerability](https://github.com/sraodev/oli/security/advisories/new)
+to create a private report. Private vulnerability reporting is enabled. If you
+cannot use that form, email the maintainer's public contact,
+[srao.dev@gmail.com](mailto:srao.dev@gmail.com), asking for a secure reporting
+channel without sending exploit details or personal scan data initially.
 
 Include, where possible:
 
@@ -33,3 +31,17 @@ Do not include personal filenames or other sensitive scan output unless it is
 essential and has been redacted. Please allow maintainers time to reproduce and
 prepare a fix before public disclosure. This project does not currently offer a
 bug bounty.
+
+## Repository safeguards
+
+Main requires a pull request, up-to-date passing quality and Darwin build
+checks, and resolved review conversations. Force-pushes and branch deletion
+are blocked, including for admins. Only GitHub Actions can satisfy the required
+checks. A single maintainer currently owns this repository, so independent
+approval is not mandatory; this is not a two-person review guarantee.
+
+Workflows use immutable action revisions and read-only permissions except for
+the release job's scoped publishing token. See the
+[maintainer security and release guide](docs/maintainers/releasing.md).
+These controls reduce repository risks; they are not a security audit or a
+guarantee that cleanup is recoverable.

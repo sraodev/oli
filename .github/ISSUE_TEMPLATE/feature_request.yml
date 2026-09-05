@@ -1,0 +1,29 @@
+name: Feature proposal
+description: Propose a focused capability missing from the roadmap.
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: "Check roadmap issue #1 first. Link overlapping issues instead of duplicating them. Proposals do not authorize cleanup or account access."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and existing coverage
+      description: Who needs this, and what existing issue or capability does not cover it?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Smallest scope and safety boundary
+      description: Describe read-only versus destructive behavior, protected data and non-goals.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance and tests
+      description: Give observable outcomes, failure cases and applicable synthetic E2E coverage.
+    validations:
+      required: true

@@ -52,6 +52,8 @@ add model-specific deletion authority or arbitrary-path inputs.
 In the description, include:
 
 - the user-visible problem and the smallest chosen solution;
+- a checked-in scope document for multi-part changes: included/excluded work,
+  ordered review links, invariants, failure behavior and remaining gates;
 - the macOS version and architecture used for testing;
 - the exact verification commands and their output summary;
 - before/after screenshots for dashboard changes;
@@ -63,6 +65,12 @@ boundary. Use verified issue/commit references and text status labels alongside
 colors. Keep small changes' diagrams small. Include an editable source and
 visually inspect the rendered result; see the
 [Storage Atlas example](docs/diagrams/pr-33-reviewer-roadmap.svg).
+
+For architecture or workflow changes, attach sequence and architecture diagrams
+alongside the roadmap. Keep editable sources with rendered previews and link
+the checked-in documents from the PR body. The
+[repository-readiness review package](docs/reviews/repository-readiness-scope.md)
+shows this structure without treating planned work as implemented.
 
 Run relevant end-to-end flows for every implementation change using synthetic
 fixtures, never personal data for destructive testing. Cover the relevant CLI,
