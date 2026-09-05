@@ -1,4 +1,4 @@
-# Oli
+# Oli - Open Lifecycle Intelligence
 
 ```text
       ,\
@@ -13,8 +13,6 @@
 
                     github.com/sraodev/oli
 ```
-
-**Your machine’s housekeeper.**
 
 Open Lifecycle Intelligence — preview-first macOS cleanup for people, scripts, and local agents.
 
