@@ -1,6 +1,4 @@
-# Oli
-
-**Your machine’s housekeeper.**
+# Oli - Open Lifecycle Intelligence 
 
 Open Lifecycle Intelligence — preview-first macOS cleanup for people, scripts, and local agents.
 
