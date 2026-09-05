@@ -1,5 +1,18 @@
 # Oli
 
+```
+          ,\
+          \\\,_       ___  _     ___
+           \` ,\     / _ \| |   |_ _|
+      __,.-" =__)    | (_) | |__ | |
+    ."        )      \___/|____|___|
+,_/   ,    \/\_
+\_|    )_-\ \_-`     Open Lifecycle Intelligence
+   `-----` `--`      preview-first macOS cleanup for people,
+                     scripts, and local agents
+                     github.com/sraodev/oli
+```
+
 **Your machine’s housekeeper.**
 
 Open Lifecycle Intelligence — preview-first macOS cleanup for people, scripts, and local agents.
