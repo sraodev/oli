@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
+	"github.com/sraodev/oli/internal/cleanup"
 )
 
 const (
@@ -284,17 +284,18 @@ func parse(fs *flag.FlagSet, args []string) error {
 // Usage is intentionally compact so it remains useful in both terminals and
 // issue reports.
 func Usage() string {
-	return `Mac Cleanup Studio — preview-first macOS cleanup
+	return `Oli — Open Lifecycle Intelligence
+Your machine's housekeeper. Safe, preview-first macOS cleanup.
 
 Usage:
-  mac-cleanup-studio dashboard [--listen 127.0.0.1:0] [--no-open]
-  mac-cleanup-studio capabilities [--json]
-  mac-cleanup-studio explore [--scope downloads|documents|desktop|movies|music|pictures|applications|all] [--min-size-mib 100] [--older-than-days 180] [--limit 50] [--json]
-  mac-cleanup-studio scan [--profile safe|balanced|review|all] [--rules id,...] [--json]
-  mac-cleanup-studio recommend [--profile safe|balanced|review|all] [--rules id,...] [--json]
-  mac-cleanup-studio clean [--profile safe|balanced|review|all] [--rules id,...] [--apply --yes] [--json]
-  mac-cleanup-studio auto [--apply --yes] [--json]
-  mac-cleanup-studio version
+  oli dashboard [--listen 127.0.0.1:0] [--no-open]
+  oli capabilities [--json]
+  oli explore [--scope downloads|documents|desktop|movies|music|pictures|applications|all] [--min-size-mib 100] [--older-than-days 180] [--limit 50] [--json]
+  oli scan [--profile safe|balanced|review|all] [--rules id,...] [--json]
+  oli recommend [--profile safe|balanced|review|all] [--rules id,...] [--json]
+  oli clean [--profile safe|balanced|review|all] [--rules id,...] [--apply --yes] [--json]
+  oli auto [--apply --yes] [--json]
+  oli version
 
 Cleanup commands are dry runs unless both --apply and --yes are present.
 `

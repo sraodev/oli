@@ -33,35 +33,35 @@ text { font-family: Arial, Helvetica, sans-serif; fill: #0f172a; }
 <text x="1760" y="247" class="stage">AUTHORITY / DELIVERY</text>
 <path d="M64 263H2136" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8 8"/>
 <text x="64" y="310" class="lane">01 / Shipped read-only path</text><text x="64" y="344" class="note">Existing behavior from 9161262. Every result remains inspection data, not cleanup authorization.</text>
-<a href="https://github.com/sraodev/mac-cleanup-studio/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="64" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="64" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
 <rect x="82" y="394" width="87" height="27" rx="5" fill="#15803d"/>
 <text x="94" y="413" class="badge">SHIPPED</text>
 <text x="84" y="456" class="node-title">Fixed scope entry</text>
 <text x="84" y="489" class="detail">CLI explore / local dashboard</text>
 <text x="84" y="517" class="detail">Seven personal folders only</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="488" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="488" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
 <rect x="506" y="394" width="87" height="27" rx="5" fill="#15803d"/>
 <text x="518" y="413" class="badge">SHIPPED</text>
 <text x="508" y="456" class="node-title">Bounded metadata walk</text>
 <text x="508" y="489" class="detail">200k entries · depth 64</text>
 <text x="508" y="517" class="detail">Metadata only; skip symlinks</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="912" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="912" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
 <rect x="930" y="394" width="87" height="27" rx="5" fill="#15803d"/>
 <text x="942" y="413" class="badge">SHIPPED</text>
 <text x="932" y="456" class="node-title">Honest size accounting</text>
 <text x="932" y="489" class="detail">Logical / allocated bytes</text>
 <text x="932" y="517" class="detail">Not a reclaimable estimate</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="1336" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="1336" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
 <rect x="1354" y="394" width="87" height="27" rx="5" fill="#15803d"/>
 <text x="1366" y="413" class="badge">SHIPPED</text>
 <text x="1356" y="456" class="node-title">Storage Atlas report</text>
 <text x="1356" y="489" class="detail">Folders · large · old files</text>
 <text x="1356" y="517" class="detail">Warnings, progress and stop</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="1760" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/commit/9161262704eece2ea0778b25f756eff03b238ecd"><rect x="1760" y="378" width="376" height="170" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2.5"/>
 <rect x="1778" y="394" width="87" height="27" rx="5" fill="#15803d"/>
 <text x="1790" y="413" class="badge">SHIPPED</text>
 <text x="1780" y="456" class="node-title">No deletion plan</text>
@@ -73,35 +73,35 @@ text { font-family: Arial, Helvetica, sans-serif; fill: #0f172a; }
 <path d="M1288 463H1326" class="connector"/>
 <path d="M1712 463H1750" class="connector"/>
 <text x="64" y="620" class="lane">02 / What PR #33 verified</text><text x="64" y="654" class="note">Reviewer reading order, not runtime execution. Tests and documentation only; no production behavior changed.</text>
-<a href="https://github.com/sraodev/mac-cleanup-studio/pull/33"><rect x="64" y="688" width="376" height="170" rx="12" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/pull/33"><rect x="64" y="688" width="376" height="170" rx="12" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.5"/>
 <rect x="82" y="704" width="82" height="27" rx="5" fill="#0369a1"/>
 <text x="94" y="723" class="badge">PR #33</text>
 <text x="84" y="766" class="node-title">Scope + threshold tests</text>
 <text x="84" y="799" class="detail">Fixed scopes; inclusive cutoffs</text>
 <text x="84" y="827" class="detail">Depth/device/warning limits</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/pull/33"><rect x="488" y="688" width="376" height="170" rx="12" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/pull/33"><rect x="488" y="688" width="376" height="170" rx="12" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.5"/>
 <rect x="506" y="704" width="82" height="27" rx="5" fill="#0369a1"/>
 <text x="518" y="723" class="badge">PR #33</text>
 <text x="508" y="766" class="node-title">CLI + JSON checks</text>
 <text x="508" y="799" class="detail">Partial warnings preserved</text>
 <text x="508" y="827" class="detail">Cancelled run emits no report</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/pull/33"><rect x="912" y="688" width="376" height="170" rx="12" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/pull/33"><rect x="912" y="688" width="376" height="170" rx="12" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.5"/>
 <rect x="930" y="704" width="82" height="27" rx="5" fill="#0369a1"/>
 <text x="942" y="723" class="badge">PR #33</text>
 <text x="932" y="766" class="node-title">API + operation guards</text>
 <text x="932" y="799" class="detail">Auth, path rejection, deadline</text>
 <text x="932" y="827" class="detail">Cancellation and serialization</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/pull/33"><rect x="1336" y="688" width="376" height="170" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/pull/33"><rect x="1336" y="688" width="376" height="170" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2.5"/>
 <rect x="1354" y="704" width="87" height="27" rx="5" fill="#b45309"/>
 <text x="1366" y="723" class="badge">PARTIAL</text>
 <text x="1356" y="766" class="node-title">Browser E2E coverage</text>
 <text x="1356" y="799" class="detail">Desktop + synthetic fixtures</text>
 <text x="1356" y="827" class="detail">Manual; not an automated suite</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/pull/33"><rect x="1760" y="688" width="376" height="170" rx="12" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/pull/33"><rect x="1760" y="688" width="376" height="170" rx="12" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.5"/>
 <rect x="1778" y="704" width="82" height="27" rx="5" fill="#0369a1"/>
 <text x="1790" y="723" class="badge">PR #33</text>
 <text x="1780" y="766" class="node-title">Reviewable evidence</text>
@@ -113,35 +113,35 @@ text { font-family: Arial, Helvetica, sans-serif; fill: #0f172a; }
 <path d="M1288 773H1326" class="connector"/>
 <path d="M1712 773H1750" class="connector"/>
 <text x="64" y="936" class="lane">03 / Next review gates — not delivered by PR #33</text><text x="64" y="970" class="note">First three boxes show a proposed review order. System/cloud and release work have independent gates.</text>
-<a href="https://github.com/sraodev/mac-cleanup-studio/issues/3"><rect x="64" y="1004" width="376" height="170" rx="12" fill="#fee2e2" stroke="#b91c1c" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/issues/3"><rect x="64" y="1004" width="376" height="170" rx="12" fill="#fee2e2" stroke="#b91c1c" stroke-width="2.5"/>
 <rect x="82" y="1020" width="87" height="27" rx="5" fill="#b91c1c"/>
 <text x="94" y="1039" class="badge">PLANNED</text>
 <text x="84" y="1082" class="node-title">Candidate review</text>
 <text x="84" y="1115" class="detail">#3 / F02 · select candidate IDs</text>
 <text x="84" y="1143" class="detail">Never accept arbitrary paths</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/issues/4"><rect x="488" y="1004" width="376" height="170" rx="12" fill="#fee2e2" stroke="#b91c1c" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/issues/4"><rect x="488" y="1004" width="376" height="170" rx="12" fill="#fee2e2" stroke="#b91c1c" stroke-width="2.5"/>
 <rect x="506" y="1020" width="87" height="27" rx="5" fill="#b91c1c"/>
 <text x="518" y="1039" class="badge">PLANNED</text>
 <text x="508" y="1082" class="node-title">Recovery + exclusions</text>
 <text x="508" y="1115" class="detail">#4 / F03 · #5 / F04</text>
 <text x="508" y="1143" class="detail">Restore paths and protection</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/issues/13"><rect x="912" y="1004" width="376" height="170" rx="12" fill="#fee2e2" stroke="#b91c1c" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/issues/13"><rect x="912" y="1004" width="376" height="170" rx="12" fill="#fee2e2" stroke="#b91c1c" stroke-width="2.5"/>
 <rect x="930" y="1020" width="87" height="27" rx="5" fill="#b91c1c"/>
 <text x="942" y="1039" class="badge">PLANNED</text>
 <text x="932" y="1082" class="node-title">Reviewed file actions</text>
 <text x="932" y="1115" class="detail">#13 duplicates · #15 uninstall</text>
 <text x="932" y="1143" class="detail">Require ownership + recovery</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/issues/24"><rect x="1336" y="1004" width="376" height="170" rx="12" fill="#f3e8ff" stroke="#7e22ce" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/issues/24"><rect x="1336" y="1004" width="376" height="170" rx="12" fill="#f3e8ff" stroke="#7e22ce" stroke-width="2.5"/>
 <rect x="1354" y="1020" width="132" height="27" rx="5" fill="#7e22ce"/>
 <text x="1366" y="1039" class="badge">DESIGN GATED</text>
 <text x="1356" y="1082" class="node-title">System / cloud changes</text>
 <text x="1356" y="1115" class="detail">#24–#32 · separate designs</text>
 <text x="1356" y="1143" class="detail">Explicit authority per action</text>
 </a>
-<a href="https://github.com/sraodev/mac-cleanup-studio/issues/8"><rect x="1760" y="1004" width="376" height="170" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2.5"/>
+<a href="https://github.com/sraodev/oli/issues/8"><rect x="1760" y="1004" width="376" height="170" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2.5"/>
 <rect x="1778" y="1020" width="87" height="27" rx="5" fill="#b45309"/>
 <text x="1790" y="1039" class="badge">PARTIAL</text>
 <text x="1780" y="1082" class="node-title">Release validation</text>
@@ -154,5 +154,5 @@ text { font-family: Arial, Helvetica, sans-serif; fill: #0f172a; }
 <text x="90" y="1262" class="node-title">Hard boundary for this review</text>
 <text x="90" y="1299" class="note">PR #33 strengthens evidence, not deletion authority. No personal-file cleanup, app removal, scheduler, system mutation or cloud deletion was added.</text>
 <text x="90" y="1328" class="note">Keep manual smoke tests distinct from automated E2E. Cross-build success does not prove Intel hardware support or a signed, install-tested release.</text>
-<a href="https://github.com/sraodev/mac-cleanup-studio/pull/33"><text x="64" y="1402" class="source">Evidence: PR #33 · merge a9f9100 · docs/storage-atlas-verification.md · roadmap #1 · snapshot 2026-08-31</text></a>
+<a href="https://github.com/sraodev/oli/pull/33"><text x="64" y="1402" class="source">Evidence: PR #33 · merge a9f9100 · docs/storage-atlas-verification.md · roadmap #1 · snapshot 2026-08-31</text></a>
 </svg>

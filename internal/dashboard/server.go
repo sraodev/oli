@@ -1,4 +1,4 @@
-// Package dashboard serves the local Mac Cleanup Studio user interface.
+// Package dashboard serves the local Oli user interface.
 //
 // The package deliberately knows nothing about the filesystem. Callers provide
 // a Service implementation, and mutation requests identify previously scanned
@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
+	"github.com/sraodev/oli/internal/cleanup"
 )
 
 const (
@@ -246,7 +246,7 @@ type appHandler struct {
 func (a *appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		if !a.authenticated(r) {
-			w.Header().Set("WWW-Authenticate", `Bearer realm="mac-cleanup-studio"`)
+			w.Header().Set("WWW-Authenticate", `Bearer realm="oli"`)
 			writeError(w, http.StatusUnauthorized, "A valid local session token is required.")
 			return
 		}

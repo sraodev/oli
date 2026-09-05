@@ -1,13 +1,16 @@
 # Storage Atlas integration verification
 
-Issue: [#2](https://github.com/sraodev/mac-cleanup-studio/issues/2) (F01).
+Issue: [#2](https://github.com/sraodev/oli/issues/2) (F01).
 Verified on August 31, 2026.
+
+Historical evidence predating the Oli rename: literal output below preserves
+the original module name. The reproducible commands use the current entrypoint.
 
 ## Scope and publication state
 
 The Storage Atlas implementation was integrated at
-[`9161262`](https://github.com/sraodev/mac-cleanup-studio/commit/9161262704eece2ea0778b25f756eff03b238ecd).
-Its [source CI passed](https://github.com/sraodev/mac-cleanup-studio/actions/runs/33359243626).
+[`9161262`](https://github.com/sraodev/oli/commit/9161262704eece2ea0778b25f756eff03b238ecd).
+Its [source CI passed](https://github.com/sraodev/oli/actions/runs/33359243626).
 This acceptance pass adds regression coverage; it does not implement the
 separate F02–F07 features also mentioned in the issue body, expand cleanup
 authority, or publish a binary release.
@@ -69,12 +72,12 @@ ok  github.com/sraodev/mac-cleanup-studio/internal/dashboard     2.753s
 Focused checks are reproducible with:
 
 ```sh
-go test -count=1 -race -run Explore -v ./cmd/mac-cleanup-studio ./internal/cleanup ./internal/app ./internal/dashboard
+go test -count=1 -race -run Explore -v ./cmd/oli ./internal/cleanup ./internal/app ./internal/dashboard
 make check
 node --check internal/dashboard/static/app.js
 go mod tidy -diff
-GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o /dev/null ./cmd/mac-cleanup-studio
-GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -o /dev/null ./cmd/mac-cleanup-studio
+GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o /dev/null ./cmd/oli
+GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -o /dev/null ./cmd/oli
 git diff --check
 ```
 

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
-	"github.com/sraodev/mac-cleanup-studio/internal/dashboard"
+	"github.com/sraodev/oli/internal/cleanup"
+	"github.com/sraodev/oli/internal/dashboard"
 )
 
 // DashboardService adapts the filesystem engine to the path-free dashboard

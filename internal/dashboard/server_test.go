@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
+	"github.com/sraodev/oli/internal/cleanup"
 )
 
 const testToken = "0123456789abcdef0123456789abcdef"
@@ -156,8 +156,8 @@ func TestHandlerRejectsMissingOrInvalidToken(t *testing.T) {
 			if response.Code != http.StatusUnauthorized {
 				t.Fatalf("status = %d, want %d; body: %s", response.Code, http.StatusUnauthorized, response.Body.String())
 			}
-			if response.Header().Get("WWW-Authenticate") == "" {
-				t.Fatal("WWW-Authenticate header is missing")
+			if got := response.Header().Get("WWW-Authenticate"); got != `Bearer realm="oli"` {
+				t.Fatalf("unexpected authentication realm: %q", got)
 			}
 		})
 	}
@@ -186,6 +186,11 @@ func TestSecurityHeadersAndEmbeddedAssets(t *testing.T) {
 
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	for _, want := range []string{"<title>Oli — Open Lifecycle Intelligence</title>", "<strong>Oli</strong>", "LOCAL HOUSEKEEPER"} {
+		if !strings.Contains(response.Body.String(), want) {
+			t.Errorf("dashboard missing brand text %q", want)
+		}
 	}
 	if got := response.Header().Get("Content-Security-Policy"); !strings.Contains(got, "default-src 'none'") || !strings.Contains(got, "connect-src 'self'") || !strings.Contains(got, "frame-ancestors 'none'") {
 		t.Fatalf("unexpected Content-Security-Policy: %q", got)

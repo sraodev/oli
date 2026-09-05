@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">Oli rename — reviewer roadmap</title>
+  <desc id="desc">Existing cleanup engine feeds the renamed CLI, dashboard and build pipeline. Compatibility and safety boundaries are preserved. Source merge and published binaries remain separate gates; future lifecycle and native features are deferred.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#475569"/></marker>
+    <style>text{font-family:Arial,sans-serif;fill:#172033}.title{font-size:30px;font-weight:700}.sub{font-size:16px;fill:#475569}.label{font-size:13px;font-weight:700}.head{font-size:21px;font-weight:700}.body{font-size:16px}.line{fill:none;stroke:#475569;stroke-width:2;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1200" height="560" fill="#fff"/>
+  <text x="36" y="50" class="title">Oli — Open Lifecycle Intelligence</text>
+  <text x="36" y="79" class="sub">Rename review • CLI-first housekeeper • no new cleanup authority</text>
+  <rect x="36" y="113" width="322" height="163" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+  <text x="54" y="139" class="label">VERIFIED BUILT · EXISTING MAIN</text>
+  <text x="54" y="173" class="head">One cleanup engine</text>
+  <text x="54" y="201" class="body">Scan → review → explicit action</text>
+  <text x="54" y="227" class="body">Atlas is read-only</text>
+  <text x="54" y="253" class="body">Baseline: eac8989</text>
+  <path d="M358 194H423" class="line"/>
+  <rect x="430" y="113" width="340" height="163" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+  <text x="448" y="139" class="label">VERIFIED BUILT · LOCAL BRANCH</text>
+  <text x="448" y="173" class="head">Oli surfaces</text>
+  <text x="448" y="201" class="body">oli CLI / Go module / dashboard</text>
+  <text x="448" y="227" class="body">Docs / CI / release archive names</text>
+  <text x="448" y="253" class="body">Race suite + binary E2E + browser smoke</text>
+  <path d="M770 194H833" class="line"/>
+  <rect x="840" y="113" width="324" height="163" rx="12" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+  <text x="858" y="139" class="label">PARTIAL · PUBLICATION</text>
+  <text x="858" y="173" class="head">Same repository, new name</text>
+  <text x="858" y="201" class="body">sraodev/oli · issue IDs preserved</text>
+  <text x="858" y="227" class="body">Source merge requires review</text>
+  <text x="858" y="253" class="body">No binary release claimed</text>
+  <path d="M600 276V308" class="line"/>
+  <rect x="36" y="316" width="734" height="102" rx="12" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+  <text x="54" y="344" class="label">HARD BOUNDARY · COMPATIBILITY</text>
+  <text x="54" y="374" class="body">Keep the existing v1 wire ID, rules, exit codes and confirmation gates.</text>
+  <text x="54" y="400" class="body">No data migration. No history rewrite. Unmerged feature branches stay intact.</text>
+  <rect x="840" y="316" width="324" height="102" rx="12" fill="#e0f2fe" stroke="#0369a1" stroke-width="2"/>
+  <text x="858" y="344" class="label">PLANNED · SEPARATE GATES</text>
+  <text x="858" y="374" class="body">#8 release / install validation</text>
+  <text x="858" y="400" class="body">Reconcile other branches separately</text>
+  <rect x="36" y="451" width="1128" height="74" rx="12" fill="#f3e8ff" stroke="#7e22ce" stroke-width="2"/>
+  <text x="54" y="479" class="label">DEFERRED · NOT PART OF THIS RENAME</text>
+  <text x="54" y="505" class="body">New agent lifecycle automation, memory management, cloud integrations and native macOS shell.</text>
+</svg>

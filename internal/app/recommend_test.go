@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
+	"github.com/sraodev/oli/internal/cleanup"
 )
 
 func TestRecommendationsAreDeterministicAndNeverAuthorizeDeletion(t *testing.T) {

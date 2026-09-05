@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
+	"github.com/sraodev/oli/internal/cleanup"
 )
 
 func fixtureRules() []cleanup.RuleInfo {

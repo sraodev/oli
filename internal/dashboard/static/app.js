@@ -88,7 +88,7 @@
     const fragmentToken = fragment.get("token");
     if (fragmentToken) {
       try {
-        window.sessionStorage.setItem("mac-cleanup-studio-token", fragmentToken);
+        window.sessionStorage.setItem("oli-token", fragmentToken);
       } catch (_) {
         // A session-only in-memory token still works when storage is disabled.
       }
@@ -96,7 +96,7 @@
       return fragmentToken;
     }
     try {
-      return window.sessionStorage.getItem("mac-cleanup-studio-token") || "";
+      return window.sessionStorage.getItem("oli-token") || "";
     } catch (_) {
       return "";
     }
@@ -105,7 +105,7 @@
   function clearSessionToken() {
     state.token = "";
     try {
-      window.sessionStorage.removeItem("mac-cleanup-studio-token");
+      window.sessionStorage.removeItem("oli-token");
     } catch (_) {
       // Ignore unavailable storage.
     }

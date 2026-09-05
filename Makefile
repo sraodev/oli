@@ -1,13 +1,13 @@
-BINARY := bin/mac-cleanup-studio
+BINARY := bin/oli
 
 .PHONY: build check fmt-check run test test-race vet
 
 build:
 	@mkdir -p bin
-	go build -trimpath -o $(BINARY) ./cmd/mac-cleanup-studio
+	go build -trimpath -o $(BINARY) ./cmd/oli
 
 run:
-	go run ./cmd/mac-cleanup-studio
+	go run ./cmd/oli
 
 test:
 	go test ./...

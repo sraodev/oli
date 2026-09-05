@@ -1,6 +1,6 @@
 package app
 
-import "github.com/sraodev/mac-cleanup-studio/internal/cleanup"
+import "github.com/sraodev/oli/internal/cleanup"
 
 // RecommendationDecision is an explainable, deterministic suggestion. It is
 // intentionally not model-generated and never grants deletion authority.

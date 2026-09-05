@@ -7,8 +7,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/sraodev/mac-cleanup-studio/internal/cleanup"
-	"github.com/sraodev/mac-cleanup-studio/internal/cli"
+	"github.com/sraodev/oli/internal/cleanup"
+	"github.com/sraodev/oli/internal/cli"
 )
 
 func runExplore(ctx context.Context, opts cli.Options, engine *cleanup.Engine, output io.Writer) error {
