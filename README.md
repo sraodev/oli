@@ -21,7 +21,7 @@ Open Lifecycle Intelligence — preview-first macOS cleanup for people, scripts,
 
 [Get started](#try-oli) · [User guide](docs/guides/usage.md) · [Agent contract](docs/agent-interface.md) · [Roadmap](ROADMAP.md) · [Contribute](CONTRIBUTING.md)
 
-![Oli: make room, keep control. Local macOS cleanup with CLI and JSON, explicit review, and no cloud account.](docs/assets/oli-social.png)
+![Oli rabbit and ASCII wordmark. Open Lifecycle Intelligence — preview-first macOS cleanup for people, scripts, and local agents. Inspect, decide, verify.](docs/assets/oli-social.png)
 
 ## What is Oli?
 
