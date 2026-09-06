@@ -149,6 +149,9 @@ func (e *Engine) Scan(ctx context.Context, opts ScanOptions) (*Scan, error) {
 	scan.Detected = metricsForCandidates(all, false)
 	scan.Eligible = metricsForCandidates(all, true)
 	scan.CompletedAt = time.Now()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	emit(opts.Callback, Event{Kind: EventScanCompleted})
 	return scan, nil
 }

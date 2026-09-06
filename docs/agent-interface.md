@@ -77,6 +77,21 @@ No command accepts an arbitrary filesystem path. Agents can select only
 compiled rule IDs, report-only rules fail closed during cleanup, and deletion
 always requires both execution flags.
 
+## Scan cancellation boundary
+
+The engine checks its context once more before emitting `scan_completed` and
+returning a completed scan. Cancellation observed at that boundary returns an
+error and no scan; candidate/rule progress already emitted is not proof of success.
+Cancellation from the completion callback itself is after this boundary and does
+not retroactively invalidate the completed scan.
+
+During the scanning stage, `scan`, `recommend` and `clean` previews emit no success
+document on cancellation (exit 130) or an expired caller deadline (exit 1).
+This does not add a timeout flag, a new automatic deadline, or hard CPU/I/O/memory
+bounds. Cancellation is cooperative, not a guarantee that a blocked filesystem
+operation stops immediately. If an applied cleanup has already started, its
+existing partial-result behavior still applies.
+
 ## Deterministic recommendations
 
 `recommend` scans current disk state and emits one decision per rule:
