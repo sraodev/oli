@@ -15,6 +15,9 @@ const (
 	RuleTrash           = "trash"
 	RuleXcodeArchives   = "xcode-archives"
 	RuleDeviceBackups   = "ios-device-backups"
+	RuleAppLogs         = "app-specific-logs"
+	RuleAppCaches       = "app-specific-caches"
+	RuleMobilePackages  = "ios-app-packages"
 )
 
 // DefaultRules returns the intentionally narrow built-in macOS rules. Missing
@@ -28,10 +31,11 @@ func DefaultRules(home string) []Rule {
 	return []Rule{
 		{
 			ID: RuleUserCaches, Name: "Application caches",
-			Description: "Direct children of ~/Library/Caches not used for at least 30 days.",
+			Description: "Direct children of ~/Library/Caches not modified for at least 30 days; Poetry is excluded because it may contain virtual environments.",
 			Risk:        RiskSafe, Action: ActionClean, Default: true, Auto: true,
-			MinimumAge: 30 * 24 * time.Hour,
-			Roots:      []string{join("Library", "Caches")},
+			MinimumAge:       30 * 24 * time.Hour,
+			Roots:            []string{join("Library", "Caches")},
+			ExcludedChildren: []string{"pypoetry"},
 		},
 		{
 			ID: RuleUserLogs, Name: "Application logs",
@@ -49,13 +53,47 @@ func DefaultRules(home string) []Rule {
 		},
 		{
 			ID: RuleDeveloperCaches, Name: "Developer caches",
-			Description: "Gradle, npm, and Go module download caches not updated for at least 30 days.",
+			Description: "Default Gradle, npm, Go module download, Android download, and pyenv download caches not modified for at least 30 days. Environments and installed modules are excluded.",
 			Risk:        RiskCaution, Action: ActionClean, MinimumAge: 30 * 24 * time.Hour,
 			Roots: []string{
 				join(".gradle", "caches"),
 				join(".npm", "_cacache"),
 				join("go", "pkg", "mod", "cache"),
+				join(".android", "cache"),
+				join(".pyenv", "cache"),
 			},
+		},
+		{
+			ID: RuleAppLogs, Name: "App-specific logs",
+			Description: "Known Minecraft, Steam, Lunar Client, Cacher and Kite log directories not modified for at least 30 days. Close the app first; logs will be permanently removed.",
+			Risk:        RiskCaution, Action: ActionClean, MinimumAge: 30 * 24 * time.Hour,
+			Roots: []string{
+				join("Library", "Application Support", "minecraft", "logs"),
+				join("Library", "Application Support", "minecraft", "crash-reports"),
+				join("Library", "Application Support", "Steam", "logs"),
+				join(".lunarclient", "logs"),
+				join(".cacher", "logs"),
+				join(".kite", "logs"),
+			},
+		},
+		{
+			ID: RuleAppCaches, Name: "App cache inspection",
+			Description: "Adobe media, legacy Dropbox, Steam and Lunar Client cache locations are report-only until app activity and recovery boundaries are validated.",
+			Risk:        RiskReview, Action: ActionScanOnly,
+			Roots: []string{
+				join("Library", "Application Support", "Adobe", "Common", "Media Cache Files"),
+				join("Dropbox", ".dropbox.cache"),
+				join("Library", "Application Support", "Steam", "appcache"),
+				join("Library", "Application Support", "Steam", "depotcache"),
+				join(".lunarclient", "game-cache"),
+				join(".lunarclient", "launcher-cache"),
+			},
+		},
+		{
+			ID: RuleMobilePackages, Name: "Legacy iOS application packages",
+			Description: "Downloaded iOS app packages are reported only; they may be the last available copy of an app.",
+			Risk:        RiskReview, Action: ActionScanOnly,
+			Roots: []string{join("Music", "iTunes", "iTunes Media", "Mobile Applications")},
 		},
 		{
 			ID: RuleTrash, Name: "Trash",
@@ -145,6 +183,11 @@ func validateRule(rule Rule) error {
 	if rule.MinimumAge < 0 {
 		return fmt.Errorf("cleanup: rule %q has a negative minimum age", rule.ID)
 	}
+	for _, name := range rule.ExcludedChildren {
+		if name == "" || name == "." || name == ".." || strings.ContainsAny(name, "/\\") {
+			return fmt.Errorf("cleanup: rule %q has invalid excluded child %q", rule.ID, name)
+		}
+	}
 	if rule.Auto && (rule.Action != ActionClean || rule.MinimumAge == 0) {
 		return fmt.Errorf("cleanup: automatic rule %q must be cleanable and age-gated", rule.ID)
 	}
@@ -156,6 +199,7 @@ func validateRule(rule Rule) error {
 
 func cloneRule(rule Rule) Rule {
 	rule.Roots = append([]string(nil), rule.Roots...)
+	rule.ExcludedChildren = append([]string(nil), rule.ExcludedChildren...)
 	return rule
 }
 
@@ -168,6 +212,7 @@ func ruleInfo(rule Rule, roots []compiledRoot) RuleInfo {
 		ID: rule.ID, Name: rule.Name, Description: rule.Description,
 		Risk: rule.Risk, Action: rule.Action, Default: rule.Default, Auto: rule.Auto,
 		MinimumAgeSeconds: int64(rule.MinimumAge / time.Second), Roots: displays,
+		ExcludedChildren: append([]string(nil), rule.ExcludedChildren...),
 	}
 }
 

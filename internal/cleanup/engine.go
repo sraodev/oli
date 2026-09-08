@@ -76,6 +76,7 @@ func (e *Engine) Rules() []RuleInfo {
 
 func cloneRuleInfo(info RuleInfo) RuleInfo {
 	info.Roots = append([]string(nil), info.Roots...)
+	info.ExcludedChildren = append([]string(nil), info.ExcludedChildren...)
 	return info
 }
 

@@ -66,9 +66,10 @@ It runs locally as one Go binary, with an optional browser dashboard.
 
 ## Try Oli
 
-**Source build first.** No downloadable Oli release, supported curl installer,
-or package-manager installation is currently published. Track distribution in
-[issue #8](https://github.com/sraodev/oli/issues/8).
+**CLI first.** Build from source today. The checksum-verifying installer is in
+this source tree; a public binary release is still gated by
+[issue #8](https://github.com/sraodev/oli/issues/8). No live curl or Homebrew
+installation is advertised before the corresponding assets are published.
 
 Requires macOS and the Go version declared in [go.mod](go.mod).
 From a reviewed checkout:
@@ -90,6 +91,35 @@ The scan is read-only. To inspect personal files or open the local dashboard:
 
 No account, subscription, telemetry, or `sudo`. The dashboard uses an
 authenticated loopback connection. Do not share its launch URL.
+
+### Installer, updates and uninstall
+
+The per-user installer targets Apple Silicon and Intel Macs, validates the
+download checksum, archive contents, binary architecture and release version,
+then replaces the binary atomically. Existing installations require explicit
+`--replace`. It never runs cleanup or changes your shell profile.
+
+```sh
+bash scripts/install.sh --help
+bash scripts/install.sh --dry-run  # no network or writes
+```
+
+See the [installation guide](docs/guides/installation.md) for reviewed-script
+installation, version pinning, offline assets, update/uninstall and release
+gates. macOS only; Linux and package-manager channels are not shipped.
+
+### What can Oli inspect or clean?
+
+- Old user caches and logs, including default package-manager cache locations.
+- Xcode DerivedData and reviewed npm, Gradle, Go, Android and pyenv download caches.
+- Old app-specific logs in narrowly scoped directories; not settings or saves.
+- User Trash through an explicitly selected, permanently destructive rule.
+- Backups, archives, legacy iOS packages and selected app caches as **inspection only**.
+
+The [complete cleanup coverage table](docs/guides/cleanup-coverage.md) maps every
+requested operation to its current rule or remaining issue. Simulator resets,
+Docker pruning, all-volume Trash and RAM purging are not bundled into cleanup.
+Poetry's default cache is protected because it can contain virtual environments.
 
 ## From inspection to action
 

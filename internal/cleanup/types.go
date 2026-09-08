@@ -34,6 +34,8 @@ type Rule struct {
 	Auto        bool          `json:"auto"`
 	MinimumAge  time.Duration `json:"-"`
 	Roots       []string      `json:"-"`
+	// ExcludedChildren protects direct child names (case-insensitive), not globs.
+	ExcludedChildren []string `json:"excluded_children,omitempty"`
 }
 
 // RuleInfo is the JSON-safe form of a Rule used by clients.
@@ -47,6 +49,7 @@ type RuleInfo struct {
 	Auto              bool     `json:"auto"`
 	MinimumAgeSeconds int64    `json:"minimum_age_seconds"`
 	Roots             []string `json:"roots"`
+	ExcludedChildren  []string `json:"excluded_children,omitempty"`
 }
 
 // Metrics describe a set of planned filesystem entries. Logical and allocated
