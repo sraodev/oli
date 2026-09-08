@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -100,6 +101,13 @@ func (e *Engine) Scan(ctx context.Context, opts ScanOptions) (*Scan, error) {
 					return nil, err
 				}
 				path := filepath.Join(root.path, child.Name())
+				if slices.ContainsFunc(rule.rule.ExcludedChildren, func(name string) bool { return strings.EqualFold(name, child.Name()) }) {
+					addWarning(Warning{
+						RuleID: rule.rule.ID, DisplayPath: displayPath(e.home, path), Code: "protected_child",
+						Message: "Excluded by the rule; contents were not scanned and are not included in byte estimates",
+					})
+					continue
+				}
 				candidate, err := walkCandidate(ctx, e.home, root.path, path, rootFP.Device)
 				if err != nil {
 					addWarning(Warning{

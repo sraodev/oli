@@ -509,8 +509,8 @@ func TestRuleCompletedEventCarriesDataAndPathsArePrivate(t *testing.T) {
 func TestDefaultRulesAreNarrowAndDeveloperCachesAreAgeGated(t *testing.T) {
 	home := t.TempDir()
 	rules := DefaultRules(home)
-	if len(rules) != 7 {
-		t.Fatalf("got %d default rules, want 7", len(rules))
+	if len(rules) != 10 {
+		t.Fatalf("got %d default rules, want 10", len(rules))
 	}
 	for _, rule := range rules {
 		for _, root := range rule.Roots {

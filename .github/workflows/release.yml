@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   release:
-    name: Build and publish macOS binaries
+    name: Build draft macOS release
     permissions:
       contents: write
     runs-on: macos-latest
@@ -35,32 +35,36 @@ jobs:
           fi
 
       - name: Test
-        run: go test -race ./...
+        run: |
+          test -z "$(gofmt -l .)"
+          /bin/bash -n scripts/install.sh
+          /bin/bash -n scripts/package-release.sh
+          go vet ./...
+          go test -race -count=1 ./...
 
       - name: Build archives and checksums
-        env:
-          CGO_ENABLED: "0"
+        run: /bin/bash scripts/package-release.sh "$GITHUB_REF_NAME" "$GITHUB_WORKSPACE/dist"
+
+      - name: Verify packaged native installer lifecycle
         run: |
           set -euo pipefail
-          mkdir -p dist
-          build_date="$(git show -s --format=%cI "$GITHUB_SHA")"
-          for arch in arm64 amd64; do
-            archive="oli-${GITHUB_REF_NAME}-darwin-${arch}"
-            mkdir -p "dist/${archive}"
-            GOOS=darwin GOARCH="${arch}" go build -trimpath \
-              -ldflags "-s -w -X main.version=${GITHUB_REF_NAME} -X main.commit=${GITHUB_SHA} -X main.buildDate=${build_date}" \
-              -o "dist/${archive}/oli" ./cmd/oli
-            tar -C dist -czf "dist/${archive}.tar.gz" "${archive}"
-            rm -r "dist/${archive}"
-          done
-          cd dist
-          shasum -a 256 ./*.tar.gz > SHA256SUMS
+          case "$(uname -m)" in arm64) arch=arm64 ;; x86_64) arch=amd64 ;; *) exit 1 ;; esac
+          install_root="$(mktemp -d "$HOME/.oli-release-test.XXXXXX")"
+          /bin/bash dist/install.sh --version "$GITHUB_REF_NAME" --bin-dir "$install_root/bin" \
+            --archive "dist/oli-$GITHUB_REF_NAME-darwin-$arch.tar.gz" --checksums dist/SHA256SUMS
+          "$install_root/bin/oli" version
+          "$install_root/bin/oli" help
+          /bin/bash dist/install.sh update --replace --version "$GITHUB_REF_NAME" --bin-dir "$install_root/bin" \
+            --archive "dist/oli-$GITHUB_REF_NAME-darwin-$arch.tar.gz" --checksums dist/SHA256SUMS
+          /bin/bash dist/install.sh uninstall --bin-dir "$install_root/bin" --yes
+          rmdir "$install_root/bin" "$install_root"
 
-      - name: Publish GitHub release
+      - name: Create draft for publication review
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/SHA256SUMS dist/install.sh
           --verify-tag
+          --draft
           --generate-notes
           --title "Oli ${GITHUB_REF_NAME}"

@@ -117,4 +117,37 @@ func TestOliBinaryE2E(t *testing.T) {
 	if _, err := os.Stat(candidate); !os.IsNotExist(err) {
 		t.Fatalf("confirmed fixture cleanup: %v", err)
 	}
+
+	// The expanded catalog must preserve app data and keep report-only caches
+	// outside deletion authority, including through the executable interface.
+	log := filepath.Join(fixtureHome, ".cacher", "logs", "old.log")
+	snippet := filepath.Join(fixtureHome, ".cacher", "snippets", "work")
+	media := filepath.Join(fixtureHome, "Library", "Application Support", "Adobe", "Common", "Media Cache Files", "sample")
+	for _, path := range []string{log, snippet, media} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("fixture"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(path, old, old); err != nil {
+			t.Fatal(err)
+		}
+	}
+	runBinary(0, "scan", "--rules", "app-specific-caches", "--json")
+	runBinary(1, "clean", "--rules", "app-specific-caches", "--apply", "--yes")
+	runBinary(0, "clean", "--rules", "app-specific-logs", "--json")
+	if _, err := os.Stat(log); err != nil {
+		t.Fatal("preview deleted app log")
+	}
+	runBinary(2, "clean", "--rules", "app-specific-logs", "--apply")
+	runBinary(0, "clean", "--rules", "app-specific-logs", "--apply", "--yes", "--json")
+	if _, err := os.Stat(log); !os.IsNotExist(err) {
+		t.Fatal("confirmed cleanup retained app log")
+	}
+	for _, path := range []string{snippet, media} {
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("protected file changed: %s: %v", path, err)
+		}
+	}
 }

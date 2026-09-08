@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1000" viewBox="0 0 1400 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Oli CLI installer and cleanup catalog review</title>
+  <desc id="desc">Architecture, installer sequence and status roadmap. Installation never performs cleanup. Public release and higher-risk operations remain gated.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="none" stroke="#5c6678" stroke-width="1.5"/></marker>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #202734; }
+      .title { font-size: 32px; font-weight: 700; } .section { font-size: 24px; font-weight: 700; }
+      .label { font-size: 18px; font-weight: 650; } .body { font-size: 17px; fill: #4d596b; }
+      .tag { font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+      .box { fill: #eef3fc; stroke: #537cbb; stroke-width: 1.6; }
+      .partial { fill: #fff6e5; stroke: #a8792c; stroke-width: 1.6; }
+      .deferred { fill: #f3effa; stroke: #8d75ac; stroke-width: 1.6; }
+      .line { fill: none; stroke: #5c6678; stroke-width: 2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1400" height="1000" fill="#fafaf9"/>
+  <text x="48" y="60" class="title">Oli / CLI delivery, with explicit boundaries</text>
+  <text x="48" y="93" class="body">One installer. One Go engine. No implicit permission to clean.</text>
+  <text x="48" y="158" class="section">1 · Architecture</text>
+  <rect x="48" y="185" width="260" height="105" rx="12" class="box"/>
+  <text x="68" y="214" class="tag">SOURCE + PACKAGING</text>
+  <text x="68" y="245" class="label">Two macOS archives</text>
+  <text x="68" y="272" class="body">Tag → draft + checksums</text>
+  <path d="M310 238 H352" class="line"/>
+  <rect x="362" y="185" width="285" height="105" rx="12" class="box"/>
+  <text x="382" y="214" class="tag">REVIEWED INSTALLER</text>
+  <text x="382" y="245" class="label">Validate before replacing</text>
+  <text x="382" y="272" class="body">Hash · member · arch · version</text>
+  <path d="M649 238 H690" class="line"/>
+  <rect x="700" y="185" width="290" height="105" rx="12" class="box"/>
+  <text x="720" y="214" class="tag">EXISTING ENGINE + CATALOG</text>
+  <text x="720" y="245" class="label">CLI / JSON inspection</text>
+  <text x="720" y="272" class="body">Fixed roots · ages · exclusions</text>
+  <path d="M992 238 H1032" class="line"/>
+  <rect x="1042" y="185" width="310" height="105" rx="12" class="partial"/>
+  <text x="1062" y="214" class="tag">SEPARATE CONSENT</text>
+  <text x="1062" y="245" class="label">Review → revalidate → clean</text>
+  <text x="1062" y="272" class="body">Never triggered by installation</text>
+  <text x="48" y="354" class="section">2 · Install / update sequence</text>
+  <text x="80" y="395" class="label">User</text><text x="370" y="395" class="label">Installer</text>
+  <text x="760" y="395" class="label">Private stage</text><text x="1140" y="395" class="label">Installed oli</text>
+  <path d="M105 410 V610 M415 410 V610 M820 410 V610 M1190 410 V610" stroke="#c6ced8" stroke-dasharray="6 6"/>
+  <path d="M105 443 H410" class="line"/><text x="122" y="433" class="body">Options + explicit --replace</text>
+  <path d="M415 480 H814" class="line"/><text x="435" y="470" class="body">Pinned download → validate payload</text>
+  <path d="M820 524 H1184" class="line"/><text x="835" y="514" class="body">Only if valid: atomic rename</text>
+  <path d="M820 570 H421" class="line"/><text x="439" y="560" class="body">Failure: keep previous binary unchanged</text>
+  <text x="48" y="658" class="section">3 · Reviewer roadmap</text>
+  <rect x="48" y="687" width="245" height="120" rx="12" class="box"/>
+  <text x="67" y="715" class="tag">VERIFIED BUILT</text><text x="67" y="747" class="label">Preview-first engine</text>
+  <text x="67" y="775" class="body">Baseline + local fixtures</text>
+  <path d="M295 746 H324" class="line"/>
+  <rect x="334" y="687" width="245" height="120" rx="12" class="box"/>
+  <text x="353" y="715" class="tag">THIS CHANGE</text><text x="353" y="747" class="label">Installer + catalog</text>
+  <text x="353" y="775" class="body">CLI and regression evidence</text>
+  <path d="M581 746 H609" class="line"/>
+  <rect x="619" y="687" width="220" height="120" rx="12" class="partial"/>
+  <text x="638" y="715" class="tag">PARTIAL</text><text x="638" y="747" class="label">Release acceptance</text>
+  <text x="638" y="775" class="body">Platform + network gates</text>
+  <path d="M841 746 H869" class="line"/>
+  <rect x="879" y="687" width="220" height="120" rx="12" class="partial"/>
+  <text x="898" y="715" class="tag">PLANNED</text><text x="898" y="747" class="label">Publication review</text>
+  <text x="898" y="775" class="body">Draft ≠ public release</text>
+  <path d="M1101 746 H1127" class="line"/>
+  <rect x="1137" y="687" width="215" height="120" rx="12" class="deferred"/>
+  <text x="1156" y="715" class="tag">DEFERRED</text><text x="1156" y="747" class="label">Higher-risk providers</text>
+  <text x="1156" y="775" class="body">Recovery + consent</text>
+  <rect x="48" y="852" width="1304" height="108" rx="12" fill="#f0f2f5" stroke="#cad0da"/>
+  <text x="70" y="884" class="label">Hard safety boundary</text>
+  <text x="70" y="913" class="body">Install ≠ cleanup. Inspection ≠ deletion authority. Estimated bytes ≠ observed free-space gain.</text>
+  <text x="70" y="939" class="body">No sudo, RAM purge, blanket Docker prune, simulator erase-all, or automatic removal of backups and synced files.</text>
+</svg>
