@@ -1,5 +1,18 @@
 # Oli - Open Lifecycle Intelligence
 
+```
+          ,\
+          \\\,_       ___  _     ___
+           \` ,\     / _ \| |   |_ _|
+      __,.-" =__)    | (_) | |__ | |
+    ."        )      \___/|____|___|
+,_/   ,    \/\_
+\_|    )_-\ \_-`     Open Lifecycle Intelligence
+   `-----` `--`      preview-first macOS cleanup for people,
+                     scripts, and local agents
+                     github.com/sraodev/oli
+```
+
 Open Lifecycle Intelligence — preview-first macOS cleanup for people, scripts, and local agents.
 
 [![CI](https://github.com/sraodev/oli/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sraodev/oli/actions/workflows/ci.yml)

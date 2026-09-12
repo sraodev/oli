@@ -48,7 +48,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if opts.Command == cli.CommandHelp {
-		fmt.Fprint(stdout, cli.Usage())
+		fmt.Fprint(stdout, cli.Banner(), "\n", cli.Usage())
 		return 0
 	}
 	if opts.Command == cli.CommandVersion {
