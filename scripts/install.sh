@@ -3,6 +3,8 @@
 set -euo pipefail
 umask 077
 
+# Parse the complete function before doing any work when fetched through a pipe.
+main() {
 repository=https://github.com/sraodev/oli
 version=latest
 bin_dir=${HOME:?HOME is required}/.local/bin
@@ -19,7 +21,9 @@ usage() {
   printf '%s\n' \
     'Usage: bash install.sh [install|update|uninstall] [options]' \
     '  --version vMAJOR.MINOR.PATCH  Pin a release (default: latest stable)' \
-    '  --bin-dir ABSOLUTE_PATH      Destination (default: ~/.local/bin)' \
+    '  --install-dir ABSOLUTE_PATH Destination (default: ~/.local/bin)' \
+    '  --bin-dir ABSOLUTE_PATH      Alias for --install-dir' \
+    '  --no-modify-path            Explicitly keep shell profiles unchanged (always the default)' \
     '  --replace                   Explicitly replace an existing oli file' \
     '  --yes                       Confirm uninstall of the selected oli file' \
     '  --dry-run                   Show the operation without network or writes' \
@@ -30,16 +34,17 @@ case ${1:-} in install|update|uninstall) mode=$1; shift ;; esac
 while [[ $# -gt 0 ]]; do
   case $1 in
     --help|-h) usage; exit 0 ;;
-    --version|--bin-dir|--archive|--checksums)
+    --version|--bin-dir|--install-dir|--archive|--checksums)
       [[ $# -ge 2 && -n $2 ]] || fail "$1 requires a value"
       case $1 in
-        --version) version=$2 ;; --bin-dir) bin_dir=$2 ;;
+        --version) version=$2 ;; --bin-dir|--install-dir) bin_dir=$2 ;;
         --archive) archive=$2 ;; --checksums) checksums=$2 ;;
       esac
       shift 2 ;;
     --replace) replace=true; shift ;;
     --yes) yes=true; shift ;;
     --dry-run) preview=true; shift ;;
+    --no-modify-path) shift ;; # Oli never modifies shell profiles.
     *) fail "unknown argument: $1" ;;
   esac
 done
@@ -98,14 +103,15 @@ download() {
   (
     # Also bound writes when an older curl receives no Content-Length header.
     ulimit -f "$(( ($3 + 1023) / 1024 ))"
-    /usr/bin/curl --fail --silent --show-error --location --connect-timeout 15 --max-time 120 \
+    /usr/bin/curl --disable --fail --silent --show-error --location --connect-timeout 15 --max-time 120 \
       --max-filesize "$3" --proto '=https' --proto-redir '=https' --tlsv1.2 --output "$2" "$1"
   )
   [[ $(/usr/bin/stat -f %z "$2") -le $3 ]] || fail 'download exceeds size limit'
 }
 if [[ $version == latest ]]; then
-  resolved=$(/usr/bin/curl --fail --silent --show-error --head --location --connect-timeout 15 --max-time 30 \
-    --proto '=https' --proto-redir '=https' --tlsv1.2 --output /dev/null --write-out '%{url_effective}' "$repository/releases/latest")
+  resolved=$(/usr/bin/curl --disable --fail --silent --show-error --head --location --connect-timeout 15 --max-time 30 \
+    --proto '=https' --proto-redir '=https' --tlsv1.2 --output /dev/null --write-out '%{url_effective}' "$repository/releases/latest") || \
+    fail 'cannot resolve a published release; no installation changed; see https://github.com/sraodev/oli/releases'
   [[ $resolved == "$repository/releases/tag/"* ]] || fail 'unexpected latest release redirect'
   version=${resolved#"$repository/releases/tag/"}
   valid_version "$version" || fail 'latest did not resolve to a stable version'
@@ -161,3 +167,6 @@ fi
 printf 'Installed %s\nPath: %s\n' "$identity" "$target"
 printf '%s\n' 'No cleanup, services, shell profiles or security settings were changed.'
 case :$PATH: in *":$bin_dir:"*) ;; *) printf 'Add this directory to PATH yourself: %s\nOr run: "%s" help\n' "$bin_dir" "$target" ;; esac
+}
+
+main "$@"

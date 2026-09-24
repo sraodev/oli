@@ -57,7 +57,7 @@ but no binary release is published yet. A merged installer is not a live install
 | Method | Availability | Tracking |
 | --- | --- | --- |
 | Build from source | Available on macOS; commands below | [Build guide](docs/guides/installation.md#build-from-a-reviewed-checkout-now) |
-| Checksummed binary archives | Packaging implemented; publication and downloaded-byte verification pending | [#8](https://github.com/sraodev/oli/issues/8) |
+| Checksummed binary archives | Tag-driven draft and manual publication workflows in source; no verified public release yet | [#8](https://github.com/sraodev/oli/issues/8) |
 | Curl installer | Source available; public installation pending a verified release | [#44](https://github.com/sraodev/oli/issues/44) |
 | mise | Planned; no validated install command yet | [#46](https://github.com/sraodev/oli/issues/46) |
 | Homebrew tap | Planned; no validated tap command yet | [#45](https://github.com/sraodev/oli/issues/45) |
@@ -88,6 +88,19 @@ Source builds run as `./bin/oli`; installer-managed binaries use the same `oli` 
 
 ### Curl installer — release pending
 
+Preview the currently published installer without downloading a binary or writing files:
+
+```sh
+curl --disable --proto '=https' --proto-redir '=https' --tlsv1.2 -fsSL \
+  --connect-timeout 15 --max-time 60 \
+  https://raw.githubusercontent.com/sraodev/oli/main/scripts/install.sh \
+  | bash -s -- --dry-run
+```
+
+This is **preview only**, not a working binary install channel yet. Review the
+[script](scripts/install.sh) before executing it; the branch URL can change.
+The public binary-install command remains gated on [#8](https://github.com/sraodev/oli/issues/8).
+
 The per-user installer targets Apple Silicon and Intel Macs, validates the
 download checksum, archive contents, binary architecture and release version,
 then replaces the binary atomically. Existing installations require explicit
@@ -100,9 +113,18 @@ bash scripts/install.sh --help
 bash scripts/install.sh --dry-run  # no network or writes
 ```
 
-The installer requires **Bash 3.2+**, not `sh`. A copyable curl command will be
-added only after the public endpoint and its release assets pass verification.
+The installer requires **Bash 3.2+**, not `sh`. A curl command that actually installs
+will be added only after the public endpoint and its release assets pass verification.
 Never bypass a checksum mismatch or replace the expected hash with the download's hash.
+
+Release binaries will be hosted as assets on GitHub Releases, not on a separate
+server. A stable tag triggers native Apple Silicon and Intel tests and creates
+a draft; a maintainer must separately verify and publish it. See the
+[release process](docs/guides/installation.md#maintainer-packaging-and-publication-gate).
+
+The source installer also accepts `--install-dir` (alias of `--bin-dir`) and
+`--no-modify-path`. Shell profiles are always left unchanged. Piped execution is
+guarded against incomplete script bodies, and release downloads ignore implicit curl configuration.
 
 ### Homebrew, mise and wget
 

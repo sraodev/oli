@@ -57,6 +57,7 @@ func TestInstallerE2E(t *testing.T) {
 		return data
 	}
 	data := build("v0.1.0", arch)
+	t.Run("curl bootstrap", func(t *testing.T) { testCurlBootstrap(t, ctx, base, arch, data) })
 	otherArch := "amd64"
 	if arch == otherArch {
 		otherArch = "arm64"
@@ -180,6 +181,119 @@ func TestInstallerE2E(t *testing.T) {
 		t.Fatal(err)
 	}
 	run("symlink at the destination", false, "--bin-dir", targetDir, "--replace", "--dry-run")
+}
+
+func testCurlBootstrap(t *testing.T, ctx context.Context, base, arch string, data []byte) {
+	t.Helper()
+	root := filepath.Join(base, "curl-fixture")
+	if err := os.Mkdir(root, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	archive, manifest := releaseFixture(t, root, arch, "v0.1.0", []archiveEntry{{"oli", tar.TypeReg, data}})
+	source, err := os.ReadFile("install.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Substitute only the transport in a test copy; production keeps its fixed
+	// system curl and official release origin, with no runtime test bypass.
+	curl := filepath.Join(root, "curl")
+	shim := `#!/bin/bash
+set -eu
+[[ $1 == --disable ]] || exit 90
+args=" $* "
+[[ $args == *" --proto =https "* && $args == *" --proto-redir =https "* && $args == *" --tlsv1.2 "* ]] || exit 91
+[[ $args == *" --connect-timeout 15 "* && $args == *" --max-time "* ]] || exit 92
+output=
+while [[ $# -gt 0 ]]; do
+  case $1 in --output) output=$2; shift ;; esac
+  url=$1
+  shift
+done
+printf '%s\n' "$url" >> "$OLI_TEST_LOG"
+case $url in
+  https://github.com/sraodev/oli/releases/latest)
+    case $OLI_TEST_FAILURE in
+      latest) exit 22 ;;
+      redirect) printf 'https://example.invalid/releases/tag/v0.1.0'; exit 0 ;;
+    esac
+    printf 'https://github.com/sraodev/oli/releases/tag/v0.1.0' ;;
+  https://github.com/sraodev/oli/releases/download/v0.1.0/SHA256SUMS)
+    /bin/cp "$OLI_TEST_MANIFEST" "$output" ;;
+  https://github.com/sraodev/oli/releases/download/v0.1.0/oli-v0.1.0-darwin-*.tar.gz)
+    case $OLI_TEST_FAILURE in
+      timeout) exit 28 ;;
+      partial) printf 'partial' > "$output"; exit 18 ;;
+      checksum) printf 'corrupt' > "$output"; exit 0 ;;
+    esac
+    /bin/cp "$OLI_TEST_ARCHIVE" "$output" ;;
+  *) exit 93 ;;
+esac
+`
+	if err := os.WriteFile(curl, []byte(shim), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	transportSource := strings.ReplaceAll(string(source), "/usr/bin/curl", "\""+curl+"\"")
+	targetDir := filepath.Join(root, "installed bin")
+	log := filepath.Join(root, "requests")
+	run := func(script, failure string, ok bool, want string, args ...string) {
+		t.Helper()
+		cmd := exec.CommandContext(ctx, "/bin/bash", append([]string{"-s", "--"}, args...)...)
+		cmd.Stdin = strings.NewReader(script)
+		cmd.Env = append(os.Environ(), "HOME="+root, "OLI_TEST_ARCHIVE="+archive, "OLI_TEST_MANIFEST="+manifest, "OLI_TEST_LOG="+log, "OLI_TEST_FAILURE="+failure)
+		out, err := cmd.CombinedOutput()
+		if (err == nil) != ok || !strings.Contains(string(out), want) {
+			t.Fatalf("piped installer %v (%s): %v\n%s", args, failure, err, out)
+		}
+	}
+	// Cut off before the guarded entry point. No partial download may execute
+	// an install, even if it already contains mutation commands.
+	cut := strings.Index(transportSource, "/bin/mv -f")
+	if cut < 0 {
+		t.Fatal("missing install commit boundary")
+	}
+	run(transportSource[:cut], "", false, "syntax error", "--install-dir", targetDir)
+	run(transportSource, "", true, "No downloads or writes", "--install-dir", targetDir, "--no-modify-path", "--dry-run")
+	for _, p := range []string{targetDir, log} {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			t.Fatalf("truncated script or preview touched %s: %v", p, err)
+		}
+	}
+	run(transportSource, "", true, "Installed oli v0.1.0", "--install-dir", targetDir, "--no-modify-path")
+	requests, err := os.ReadFile(log)
+	if err != nil || strings.Count(string(requests), "/releases/latest") != 1 || strings.Count(string(requests), "/download/v0.1.0/") != 2 {
+		t.Fatalf("latest was not resolved once to pinned assets: %v\n%s", err, requests)
+	}
+	for _, failure := range []string{"latest", "redirect", "timeout", "partial", "checksum"} {
+		t.Run(failure, func(t *testing.T) {
+			want := ""
+			if failure == "latest" {
+				want = "cannot resolve a published release"
+			}
+			run(transportSource, failure, false, want, "update", "--replace", "--install-dir", targetDir)
+			got, err := os.ReadFile(filepath.Join(targetDir, "oli"))
+			if err != nil || !bytes.Equal(got, data) {
+				t.Fatalf("failed transport changed installed bytes: %v", err)
+			}
+			stages, _ := filepath.Glob(filepath.Join(targetDir, ".oli-install.*"))
+			if len(stages) != 0 {
+				t.Fatalf("failed transport leaked staging: %v", stages)
+			}
+		})
+	}
+	if err := os.Remove(log); err != nil {
+		t.Fatal(err)
+	}
+	run(transportSource, "latest", true, "Installed oli v0.1.0", "update", "--replace", "--version", "v0.1.0", "--install-dir", targetDir)
+	requests, err = os.ReadFile(log)
+	if err != nil || strings.Contains(string(requests), "/releases/latest") {
+		t.Fatalf("pinned install requested latest: %v", err)
+	}
+	run(transportSource, "", true, "Removed", "uninstall", "--yes", "--install-dir", targetDir)
+	for _, name := range []string{".zshrc", ".bashrc", ".profile"} {
+		if _, err := os.Stat(filepath.Join(root, name)); !os.IsNotExist(err) {
+			t.Fatalf("installer touched shell profile %s", name)
+		}
+	}
 }
 
 type archiveEntry struct {
