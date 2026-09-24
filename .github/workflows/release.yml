@@ -9,8 +9,74 @@ permissions:
   contents: read
 
 jobs:
+  verify-native:
+    name: Verify installer on ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            arch: arm64
+            machine: arm64
+          - runner: macos-15-intel
+            arch: amd64
+            machine: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+
+      - name: Validate release tag
+        run: |
+          set -euo pipefail
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release tags must use vMAJOR.MINOR.PATCH." >&2
+            exit 1
+          fi
+          test "$(uname -m)" = "${{ matrix.machine }}"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor HEAD origin/main
+
+      - name: Test
+        run: |
+          test -z "$(gofmt -l .)"
+          /bin/bash -n scripts/install.sh
+          /bin/bash -n scripts/package-release.sh
+          /bin/bash -n scripts/verify-release.sh
+          go vet ./...
+          go test -race -count=1 ./...
+
+      - name: Build and verify release assets
+        run: |
+          /bin/bash scripts/package-release.sh "$GITHUB_REF_NAME" "$RUNNER_TEMP/oli-release"
+          /bin/bash scripts/verify-release.sh "$GITHUB_REF_NAME" "$RUNNER_TEMP/oli-release"
+
+      - name: Verify packaged native installer lifecycle
+        run: |
+          set -euo pipefail
+          install_root="$(mktemp -d "$HOME/.oli-release-test.XXXXXX")"
+          assets="$RUNNER_TEMP/oli-release"
+          /bin/bash "$assets/install.sh" --version "$GITHUB_REF_NAME" --bin-dir "$install_root/bin" \
+            --archive "$assets/oli-$GITHUB_REF_NAME-darwin-${{ matrix.arch }}.tar.gz" --checksums "$assets/SHA256SUMS"
+          "$install_root/bin/oli" version | grep -F "oli $GITHUB_REF_NAME (commit $(git rev-parse HEAD),"
+          "$install_root/bin/oli" help
+          /bin/bash "$assets/install.sh" update --replace --version "$GITHUB_REF_NAME" --bin-dir "$install_root/bin" \
+            --archive "$assets/oli-$GITHUB_REF_NAME-darwin-${{ matrix.arch }}.tar.gz" --checksums "$assets/SHA256SUMS"
+          /bin/bash "$assets/install.sh" uninstall --bin-dir "$install_root/bin" --yes
+          rmdir "$install_root/bin" "$install_root"
+
   release:
     name: Build draft macOS release
+    needs: verify-native
     permissions:
       contents: write
     runs-on: macos-latest
@@ -27,37 +93,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Validate release tag
+      - name: Build and verify release assets
         run: |
-          if [[ ! "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
-            echo "Release tags must use vMAJOR.MINOR.PATCH." >&2
-            exit 1
-          fi
-
-      - name: Test
-        run: |
-          test -z "$(gofmt -l .)"
-          /bin/bash -n scripts/install.sh
-          /bin/bash -n scripts/package-release.sh
-          go vet ./...
-          go test -race -count=1 ./...
-
-      - name: Build archives and checksums
-        run: /bin/bash scripts/package-release.sh "$GITHUB_REF_NAME" "$GITHUB_WORKSPACE/dist"
-
-      - name: Verify packaged native installer lifecycle
-        run: |
-          set -euo pipefail
-          case "$(uname -m)" in arm64) arch=arm64 ;; x86_64) arch=amd64 ;; *) exit 1 ;; esac
-          install_root="$(mktemp -d "$HOME/.oli-release-test.XXXXXX")"
-          /bin/bash dist/install.sh --version "$GITHUB_REF_NAME" --bin-dir "$install_root/bin" \
-            --archive "dist/oli-$GITHUB_REF_NAME-darwin-$arch.tar.gz" --checksums dist/SHA256SUMS
-          "$install_root/bin/oli" version
-          "$install_root/bin/oli" help
-          /bin/bash dist/install.sh update --replace --version "$GITHUB_REF_NAME" --bin-dir "$install_root/bin" \
-            --archive "dist/oli-$GITHUB_REF_NAME-darwin-$arch.tar.gz" --checksums dist/SHA256SUMS
-          /bin/bash dist/install.sh uninstall --bin-dir "$install_root/bin" --yes
-          rmdir "$install_root/bin" "$install_root"
+          /bin/bash scripts/package-release.sh "$GITHUB_REF_NAME" "$GITHUB_WORKSPACE/dist"
+          /bin/bash scripts/verify-release.sh "$GITHUB_REF_NAME" "$GITHUB_WORKSPACE/dist"
 
       - name: Create draft for publication review
         env:

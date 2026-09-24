@@ -30,17 +30,34 @@ From a reviewed checkout, these commands need no release or network:
 bash scripts/install.sh --help
 bash scripts/install.sh --dry-run
 bash scripts/install.sh --version v0.1.0 --dry-run
+bash scripts/install.sh --install-dir "$HOME/.local/bin" --no-modify-path --dry-run
 ```
 
+The same preview can use the public source URL, without requiring release assets:
+
+```sh
+curl --disable --proto '=https' --proto-redir '=https' --tlsv1.2 -fsSL \
+  --connect-timeout 15 --max-time 60 \
+  https://raw.githubusercontent.com/sraodev/oli/main/scripts/install.sh \
+  | bash -s -- --dry-run
+```
+
+Review the script first. This mutable branch URL is not an immutable release or
+the stable endpoint tracked in #77. Do not remove `--dry-run` until a compatible
+release has been published and verified. An outer curl download failure can be
+masked by a shell pipeline; use `set -o pipefail` in Bash when checking its exit status.
+
 Once a release is **published and its assets verified**, download its
-`install.sh` from the release page and review it before running it. A live curl
-one-liner will be added here only after that public endpoint is tested. Do not
+`install.sh` from the release page and review it before running it. A binary-install
+curl one-liner will be added here only after that public endpoint is tested. Do not
 pipe an unreviewed script into a privileged shell.
 
 The reviewed script accepts `install` (default), `update --replace`, and
 `uninstall --yes`. `--version` pins a stable `vMAJOR.MINOR.PATCH`; otherwise
 `latest` resolves once before downloading immutable-version asset URLs.
-`--bin-dir` accepts an absolute directory, defaulting to `~/.local/bin`.
+`--install-dir` accepts an absolute directory, defaulting to `~/.local/bin`;
+`--bin-dir` remains a compatible alias. `--no-modify-path` explicitly selects the
+existing behavior: Oli never modifies shell profiles, even without this flag.
 Uninstall is local and needs no network. `--dry-run` makes no downloads or writes.
 
 After downloading and reviewing a published installer:
@@ -87,6 +104,10 @@ partial binary at the destination; a new empty installation directory can
 remain. A forced kill or power loss can leave the private staging directory.
 
 Downloads use HTTPS-only redirects with connect/total timeouts and size limits.
+Every curl invocation puts `--disable` first so implicit curl configuration cannot
+change its transport policy. The installer defers work until Bash has parsed the
+complete `main` function; a truncated function body from a pipe cannot partially
+install or uninstall. This is not authentication of the downloaded script.
 Same-origin SHA-256 checks detect corruption but are **not independent publisher
 authentication**. Never replace the expected hash to silence a mismatch. Stop,
 retain the old binary, and report the failed asset. The downloaded installer
@@ -110,9 +131,20 @@ This is a local candidate, not a signed or published release. It embeds the
 checkout's HEAD commit, so do not distribute a dirty-tree build as that commit.
 Local candidates are never uploaded as replacement release assets.
 
-The tag-triggered workflow builds archives from the tag, runs tests and native
-installer lifecycle checks, then creates a **draft** release. Publication is a
-separate maintainer decision after:
+The [tag-triggered workflow](../../.github/workflows/release.yml) accepts only a
+stable `vMAJOR.MINOR.PATCH` tag whose commit is on `main`. It runs the full test
+suite and packaged installer lifecycle on native Apple Silicon and Intel
+runners. Only after **both** pass does it build the four release assets and
+create a **draft** GitHub Release. Drafts are not a public install channel.
+
+After independent review, a maintainer may run the
+[manual publish workflow](../../.github/workflows/publish-release.yml) with that
+exact tag. It rechecks tag ancestry, draft status, the four downloaded assets,
+checksums, archive members and architectures, and the release installer against
+tagged source before publishing. It then reads back the public GitHub Release
+bytes. This workflow does not create a tag or silently publish on a push.
+
+Publication remains a separate maintainer decision after:
 
 - exact tag/commit, manifest, archive members and version readback are verified;
 - native Apple Silicon and Intel E2E pass (cross-compilation alone is not proof);
@@ -122,4 +154,12 @@ separate maintainer decision after:
 - failure coverage gaps (network timeout/interruption, low disk, Rosetta and
   minimum macOS) are recorded rather than described as tested.
 
+If post-publication readback fails, the workflow fails and the release requires
+immediate maintainer review; it does not silently replace assets or bypass a
+checksum. This source change alone does not prove either GitHub Actions workflow
+has run on a tag or that a release is publicly available.
+
 Keep #8 and #44 open until their complete acceptance boundaries are satisfied.
+
+See the [curl bootstrap review](../reviews/curl-bootstrap.md) for scope,
+architecture, execution sequence, test evidence and remaining publication gates.

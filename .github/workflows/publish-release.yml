@@ -1,0 +1,68 @@
+name: Publish release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Reviewed stable release tag (vMAJOR.MINOR.PATCH)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oli-publish-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Verify draft and publish
+    runs-on: macos-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out exact release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify tag and reviewed branch ancestry
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$TAG^{commit}")"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor HEAD origin/main
+          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true
+
+      - name: Download and verify draft assets
+        run: |
+          set -euo pipefail
+          mkdir -m 700 "$RUNNER_TEMP/oli-draft"
+          gh release download "$TAG" --dir "$RUNNER_TEMP/oli-draft"
+          /bin/bash scripts/verify-release.sh "$TAG" "$RUNNER_TEMP/oli-draft"
+
+      - name: Publish verified draft
+        run: gh release edit "$TAG" --draft=false
+
+      - name: Check public release bytes
+        run: |
+          set -euo pipefail
+          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = false
+          mkdir -m 700 "$RUNNER_TEMP/oli-public"
+          for asset in "oli-$TAG-darwin-arm64.tar.gz" "oli-$TAG-darwin-amd64.tar.gz" SHA256SUMS install.sh; do
+            /usr/bin/curl --disable --proto '=https' --proto-redir '=https' --tlsv1.2 \
+              --fail --location --silent --show-error --retry 4 --retry-all-errors \
+              --connect-timeout 15 --max-time 180 \
+              --output "$RUNNER_TEMP/oli-public/$asset" \
+              "https://github.com/sraodev/oli/releases/download/$TAG/$asset"
+            cmp "$RUNNER_TEMP/oli-draft/$asset" "$RUNNER_TEMP/oli-public/$asset"
+          done
+          /bin/bash scripts/verify-release.sh "$TAG" "$RUNNER_TEMP/oli-public"
